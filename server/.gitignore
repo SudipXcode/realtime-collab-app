@@ -48,3 +48,4 @@ uploads/
 # Optional: local DB
 *.sqlite
 *.db
+/src/generated/prisma
