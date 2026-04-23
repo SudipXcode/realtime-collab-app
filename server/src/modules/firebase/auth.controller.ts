@@ -76,7 +76,7 @@ export const login: RequestHandler = asyncHandler(
 //     res.status(200).json(successResponse(null, "User logged out", 200));
 //   },
 // );
-export const logout = asyncHandler(async (req: Request, res: Response) => {
+export const logout: RequestHandler = asyncHandler(async (req: Request, res: Response) => {
   const refreshToken = req.cookies?.refreshToken;
   const authPayload = req.auth;
 
