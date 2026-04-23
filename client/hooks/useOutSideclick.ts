@@ -1,0 +1,32 @@
+import { useEffect, useRef } from "react";
+
+export function useOutsideClick(
+  ref: React.RefObject<HTMLElement>,
+  handler: () => void,
+  enabled = true
+) {
+  const handlerRef = useRef(handler);
+
+  // always keep latest handler
+  useEffect(() => {
+    handlerRef.current = handler;
+  }, [handler]);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const listener = (event: MouseEvent | TouchEvent) => {
+      if (!ref.current) return;
+      if (ref.current.contains(event.target as Node)) return;
+      handlerRef.current();
+    };
+
+    document.addEventListener("mousedown", listener);
+    document.addEventListener("touchstart", listener);
+
+    return () => {
+      document.removeEventListener("mousedown", listener);
+      document.removeEventListener("touchstart", listener);
+    };
+  }, [ref, enabled]);
+}
