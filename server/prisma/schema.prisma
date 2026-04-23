@@ -6,3 +6,233 @@ datasource db {
   provider = "postgresql"
 }
 
+
+
+//////////////////////
+// ENUMS
+//////////////////////
+
+enum AuthProvider {
+  GOOGLE
+  GITHUB
+  FACEBOOK
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum ListType {
+  PERSONAL
+  WORK
+  SHOPPING
+  OTHERS
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  NONE
+}
+
+enum CollabStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum MemberRole {
+  EDITOR
+  VIEWER
+}
+
+// ✅ prevents string mistakes like "inbox", "INBOXX"
+enum SystemListKey {
+  INBOX
+}
+
+//////////////////////
+// USER & AUTH
+//////////////////////
+
+model User {
+  id             String   @id @default(uuid()) @db.Uuid
+  email          String   @unique @db.VarChar(255)
+  name           String?  @db.VarChar(100)
+  picture        String?  @db.Text
+  pictureId      String?
+  emailVerified  Boolean  @default(false)
+  isActive       Boolean  @default(true)
+
+  accounts       Account[]
+  tokens         RefreshToken[]
+  subscriptions  Subscription[]
+
+  lists          List[]        @relation("OwnerLists")
+  memberships    Member[]
+
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  @@index([email])
+}
+
+model Account {
+  id           String       @id @default(uuid()) @db.Uuid
+  firebaseId   String?      @db.VarChar(255)
+  provider     AuthProvider
+  providerId   String       @db.VarChar(255)
+  userId       String       @db.Uuid
+
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@index([userId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  token     String   @unique @db.Text
+  userId    String   @db.Uuid
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+//////////////////////
+// SUBSCRIPTION & PAYMENT
+//////////////////////
+
+model Subscription {
+  id         String           @id @default(uuid()) @db.Uuid
+  userId     String           @db.Uuid
+
+  plan       SubscriptionPlan @default(FREE)
+
+  startDate  DateTime?
+  endDate    DateTime?
+
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments   Payment[]
+
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([userId])
+  @@index([userId])
+  @@index([userId, endDate]) // 🔥 for active subscription checks
+}
+
+model Payment {
+  id              String        @id @default(uuid()) @db.Uuid
+  subscriptionId  String        @db.Uuid
+
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @db.Char(3)
+
+  transactionId   String        @unique @db.VarChar(255)
+  status          PaymentStatus
+
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+
+  subscription    Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([status])
+}
+
+//////////////////////
+// LIST & COLLAB
+//////////////////////
+
+model List {
+  id           String         @id @default(uuid()) @db.Uuid
+  title        String         @db.VarChar(255)
+  ownerId      String         @db.Uuid
+
+  // 🔥 SYSTEM (Inbox)
+  isSystem     Boolean        @default(false)
+  systemKey    SystemListKey?
+
+  // 🎨 USER FIELDS (ignored if system)
+  type         ListType?
+  color        String?        @db.VarChar(20)
+  isFavourite  Boolean        @default(false)
+
+  isActive     Boolean        @default(true)
+
+  owner        User           @relation("OwnerLists", fields: [ownerId], references: [id], onDelete: Cascade)
+  members      Member[]
+  tasks        Task[]
+
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+
+  // 🔥 Indexes & constraints
+  @@index([ownerId])
+  @@index([ownerId, isSystem])
+  @@index([systemKey])
+
+  // 🔥 ensures one Inbox per user
+  @@unique([ownerId, systemKey])
+}
+
+model Member {
+  id          String        @id @default(uuid()) @db.Uuid
+  listId      String        @db.Uuid
+  userId      String        @db.Uuid
+
+  role        MemberRole    @default(EDITOR)
+  status      CollabStatus  @default(PENDING)
+
+  invitedById String?       @db.Uuid
+
+  list        List @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([listId, userId])
+  @@index([userId])
+  @@index([listId])
+  @@index([status])
+}
+
+//////////////////////
+// TASK SYSTEM
+//////////////////////
+
+model Task {
+  id            String    @id @default(uuid()) @db.Uuid
+  listId        String    @db.Uuid
+  title         String    @db.VarChar(255)
+
+  priority      Priority
+  dueDate       DateTime? @db.Timestamptz(6)
+
+  isChecked     Boolean   @default(false)
+
+  description   String?   @db.Text
+  attachment    String?   @db.Text
+  attachmentId  String?
+
+  list          List      @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([listId])
+  @@index([isChecked])
+  @@index([priority])
+  @@index([dueDate])
+}

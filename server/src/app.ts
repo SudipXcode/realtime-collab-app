@@ -5,7 +5,9 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import compression from "compression";
-
+import { notFound } from "./core/middlewares/notFound.middleware";
+import { globalErrorHandler } from "./core/middlewares/globalError.middleware";
+import routes from "./routes";
 const app = express();
 
 // 1️⃣ Trust proxy
@@ -65,6 +67,16 @@ app.get("/health", (_, res) => {
     uptime: process.uptime(),
   });
 });
+// 🔟 Rate limiting ONLY for API ✅
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000,
+//   max: 100,
+//   standardHeaders: true,
+//   legacyHeaders: false,
+// });
 
-
+// app.use("/api", limiter);
+app.use("/api", routes);
+app.use(notFound);
+app.use(globalErrorHandler);
 export default app;
