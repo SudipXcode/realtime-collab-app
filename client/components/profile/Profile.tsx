@@ -892,9 +892,20 @@ const Profile: React.FC<Props> = ({ onOpenChange }) => {
           disabled={updating}
           className="mt-4 text-[14px] font-semibold text-center bg-transparent outline-none"
         />
-
-        <p className="mt-1 text-[13px] font-medium ">
-          {user?.isPro ? <span className="text-[#04de66]">Premium account</span> : <span className="text-[#DE9A04]">Free</span>}
+        <p className="mt-1 text-[13px] font-medium flex items-center gap-1">
+          {user?.isPro === undefined ? (
+            <span className="text-gray-400 animate-pulse text-[10px]">●</span>
+          ) : user.isPro ? (
+            <>
+              <span className="text-[#04de66] text-[10px]">●</span>
+              <span className="text-[#04de66]">Premium Account</span>
+            </>
+          ) : (
+            <>
+              <span className="text-[#DE9A04] text-[10px]">●</span>
+              <span className="text-[#DE9A04]">Free</span>
+            </>
+          )}
         </p>
 
       </div>
@@ -923,7 +934,7 @@ const Profile: React.FC<Props> = ({ onOpenChange }) => {
         {/* PROVIDERS */}
         <div className="bg-[#202020] p-5 rounded-2xl flex flex-col gap-4">
           <div className="flex justify-between">
-            <p className="text-[13px] lowercase  font-medium">{user?.providers ?  user?.providers: "Provider" }</p>
+            <p className="text-[13px] lowercase  font-medium">{user?.providers ? user?.providers : "Provider"}</p>
             <p className="text-[#9191a0] text-[13px] font-medium">{user?.name}</p>
           </div>
 

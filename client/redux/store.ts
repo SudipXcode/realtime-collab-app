@@ -2,11 +2,12 @@ import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage"; // localStorage
 import profileReducer from "./slices/profileSlice";
-
+import payReducer from "./slices/paySlice";
 
 // Combine reducers
 const rootReducer = combineReducers({
   profile: profileReducer,
+   pay: payReducer,
 });
 
 // Persist config

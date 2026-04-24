@@ -4,7 +4,8 @@ import ProfileDialog from "../profile/ProfileDialog"
 import { useSelector, useDispatch } from "react-redux"
 import type { RootState, AppDispatch } from "@/redux/store"
 import { closeProfile } from "@/redux/slices/profileSlice"
-
+import UpgradePremiumDialog from "../profile/UpgradePremiumDialog"
+import { closePay } from "@/redux/slices/paySlice"
 
 export default function DialogProvider(): JSX.Element {
     const dispatch = useDispatch<AppDispatch>()
@@ -13,6 +14,9 @@ export default function DialogProvider(): JSX.Element {
         (state) => state.profile.isProfileOpen
     )
 
+    const isPayOpen = useSelector<RootState, boolean>(
+        (state) => state.pay.isPayOpen
+    )
     return (
         <>
             {isProfileOpen && (
@@ -24,7 +28,12 @@ export default function DialogProvider(): JSX.Element {
                 />
             )}
 
-
+            {isPayOpen && <UpgradePremiumDialog
+                open={isPayOpen}
+                onOpenChange={(open: boolean) =>
+                    !open && dispatch(closePay())
+                }
+            />}
         </>
     )
 }

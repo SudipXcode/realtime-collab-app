@@ -3,6 +3,8 @@ import { CalendarDays, Crown, HardDrive, Library, Plus, } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'
 import { usePath } from "@/hooks/usePathname"
+import { openPay } from '@/redux/slices/paySlice'
+import { useDispatch } from 'react-redux'
 // import { openList } from '@/redux/slices/ListSlice'
 // import { useDispatch, useSelector } from 'react-redux'
 // import { openPay } from '@/redux/slices/paySlice'
@@ -12,7 +14,7 @@ import { usePath } from "@/hooks/usePathname"
 
 const ListNav: React.FC = (): JSX.Element => {
     const path = usePath()
-    // const dispatch = useDispatch()
+    const dispatch = useDispatch()
     const isNewlist = false
     // const { data, loading, loaded } = useSelector(
     //     (state: RootState) => state.listTitle
@@ -59,8 +61,8 @@ const ListNav: React.FC = (): JSX.Element => {
                 </div>
                 <div className='w-full h-auto max-h-72  flex flex-col items-center justify-start pt-2 pb-3 border-t border-[#2D2D2D] '>
                     <button
-                    //  onClick={() => dispatch(openList())} 
-                     title='Create list' className='w-full flex-none text-[#7C7C7C] hover:text-white transition ease-linear duration-150 flex items-center justify-between h-7.5  px-3 text-[13px] font-medium  '>
+                        //  onClick={() => dispatch(openList())} 
+                        title='Create list' className='w-full flex-none text-[#7C7C7C] hover:text-white transition ease-linear duration-150 flex items-center justify-between h-7.5  px-3 text-[13px] font-medium  '>
                         Lists
                         <Plus strokeWidth={2} size={17} />
                     </button>
@@ -119,8 +121,8 @@ const ListNav: React.FC = (): JSX.Element => {
                 </div>
             </div>
             <button
-            //  onClick={() => dispatch(openPay())}
-             title='Premium' className='w-full h-auto p-3 bg-[#232323] text-[12px]  font-medium  justify-center text-[#7C7C7C] hover:text-[#FF8A33] transition ease-linear duration-150 flex items-center gap-3'> <Crown size={17} /> Upgrade to Premium</button>
+                onClick={() => dispatch(openPay())}
+                title='Premium' className='w-full h-auto p-3 bg-[#232323] text-[12px]  font-medium  justify-center text-[#7C7C7C] hover:text-[#FF8A33] transition ease-linear duration-150 flex items-center gap-3'> <Crown size={17} /> Upgrade to Premium</button>
         </div>
     )
 }
