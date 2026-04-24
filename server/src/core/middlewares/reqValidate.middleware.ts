@@ -1,12 +1,8 @@
-
-
 import { ZodError, ZodTypeAny } from "zod";
 import { clearAuthCookies } from "../utils/authCookie";
 import { verifyAccessToken, verifyRefreshToken } from "../utils/jwt";
 import { Errors } from "../errors/customeError.errors";
 import { Request, Response, NextFunction, RequestHandler } from "express";
-
-
 
 export const validate =
   (schema: ZodTypeAny, source: "body" | "query" | "params" = "body") =>
@@ -18,20 +14,31 @@ export const validate =
     } catch (error) {
       if (error instanceof ZodError) {
         return next(
-          Errors.BAD_REQUEST("VALIDATION_ERROR", {
-            issues: error.issues, // ✅ fixed
-          })
+          Errors.BAD_REQUEST({
+            code: "VALIDATION_ERROR",
+            message: "Request validation failed",
+            details: { issues: error.issues },
+          }),
         );
       }
       next(error);
     }
   };
 
-export const validateRefreshToken: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
+export const validateRefreshToken: RequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const token = req.cookies?.refreshToken;
 
   if (!token) {
-    return next(Errors.UNAUTHORIZED("REFRESH_TOKEN_MISSING"));
+    return next(
+      Errors.UNAUTHORIZED({
+        code: "REFRESH_TOKEN_MISSING",
+        message: "Refresh token missing",
+      }),
+    );
   }
 
   try {
@@ -42,14 +49,28 @@ export const validateRefreshToken: RequestHandler = (req: Request, res: Response
     clearAuthCookies(res);
 
     if (err.name === "TokenExpiredError") {
-      return next(Errors.UNAUTHORIZED("REFRESH_TOKEN_EXPIRED"));
+      return next(
+        Errors.UNAUTHORIZED({
+          code: "REFRESH_TOKEN_EXPIRED",
+          message: "Refresh token expired",
+        }),
+      );
     }
 
-    return next(Errors.UNAUTHORIZED("REFRESH_TOKEN_INVALID"));
+    return next(
+      Errors.UNAUTHORIZED({
+        code: "REFRESH_TOKEN_INVALID",
+        message: "Invalid refresh token",
+      }),
+    );
   }
 };
 
-export const validateAccessToken: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
+export const validateAccessToken: RequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const authHeader = req.headers.authorization;
 
   let token: string | undefined;
@@ -61,7 +82,12 @@ export const validateAccessToken: RequestHandler = (req: Request, res: Response,
   }
 
   if (!token) {
-    return next(Errors.UNAUTHORIZED("ACCESS_TOKEN_MISSING"));
+    return next(
+      Errors.UNAUTHORIZED({
+        code: "ACCESS_TOKEN_MISSING",
+        message: "Access token missing",
+      }),
+    );
   }
 
   try {
@@ -70,9 +96,19 @@ export const validateAccessToken: RequestHandler = (req: Request, res: Response,
     return next();
   } catch (err: any) {
     if (err.name === "TokenExpiredError") {
-      return next(Errors.UNAUTHORIZED("ACCESS_TOKEN_EXPIRED"));
+      return next(
+        Errors.UNAUTHORIZED({
+          code: "ACCESS_TOKEN_EXPIRED",
+          message: "Access token expired",
+        }),
+      );
     }
 
-    return next(Errors.UNAUTHORIZED("ACCESS_TOKEN_INVALID"));
+    return next(
+      Errors.UNAUTHORIZED({
+        code: "ACCESS_TOKEN_INVALID",
+        message: "Invalid access token",
+      }),
+    );
   }
 };

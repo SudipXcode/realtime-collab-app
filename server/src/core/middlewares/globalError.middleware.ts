@@ -1,87 +1,68 @@
 
 // import { Request, Response, NextFunction } from "express";
 // import { AppError } from "../errors/appError.errors";
+// import { sendError } from "../utils/responseHelper";
 
-// export const errorMiddleware = (
-//   err: Error | AppError,
+// export const globalErrorHandler = (
+//   err: any,
 //   req: Request,
 //   res: Response,
 //   next: NextFunction
 // ) => {
-//   const isAppError = err instanceof AppError;
+//   let error = err;
+
+//   // 🔥 Normalize unknown errors
+//   if (!(error instanceof AppError)) {
+//     error = new AppError(
+//       error.message || "Unknown error",
+//       500,
+//       "INTERNAL_ERROR",
+//       {},
+//       false
+//     );
+//   }
+
 //   const isDev = process.env.NODE_ENV === "development";
 
-//   const statusCode = isAppError ? err.statusCode : 500;
+//   // 🔥 DEV: full details
+//   if (isDev) {
+//     return sendError(
+//       res,
+//       error.message,
+//       error.statusCode,
+//       error.errorCode,
+//       {
+//         ...error.details,
+//         stack: error.stack,
+//       }
+//     );
+//   }
 
-//   // -----------------------------
-//   // 🔐 SAFE MESSAGE HANDLING
-//   // -----------------------------
-//   const message = isAppError
-//     ? err.message
-//     : isDev
-//     ? err.message
-//     : "Internal Server Error";
+//   // 🔥 PROD: safe errors only
+//   if (error.isOperational) {
+//     return sendError(
+//       res,
+//       error.message,
+//       error.statusCode,
+//       error.errorCode,
+//       error.details
+//     );
+//   }
 
-//   // -----------------------------
-//   // 🧾 ERROR CODE
-//   // -----------------------------
-//   const code = isAppError ? err.errorCode : "INTERNAL_ERROR";
+//   // 🔥 Unknown crash (hide details)
+//   console.error("💥 UNEXPECTED ERROR:", error);
 
-//   // -----------------------------
-//   // 🪵 LOGGING (ALWAYS FULL)
-//   // -----------------------------
-//   console.error("🔥 Error:", {
-//     message: err.message,
-//     stack: err.stack,
-//     route: req.originalUrl,
-//     method: req.method,
-//   });
-
-//   // -----------------------------
-//   // 🚫 RESPONSE (SANITIZED)
-//   // -----------------------------
-//   res.status(statusCode).json({
-//     success: false,
-//     message,
-//     code,
-//     errors: isAppError ? err.details || null : null,
-
-//     // only expose stack in development
-//     ...(isDev && {
-//       stack: err.stack,
-//     }),
-//   });
+//   return sendError(
+//     res,
+//     "Something went wrong",
+//     500,
+//     "INTERNAL_ERROR"
+//   );
 // };
 
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/appError.errors";
-
-const sendDevError = (err: AppError, res: Response) => {
-  res.status(err.statusCode).json({
-    success: false,
-    error: err.toJSON(),
-    stack: err.stack,
-  });
-};
-
-const sendProdError = (err: AppError, res: Response) => {
-  if (err.isOperational) {
-    res.status(err.statusCode).json({
-      success: false,
-      error: err.toJSON(),
-    });
-  } else {
-    console.error("💥 UNEXPECTED ERROR:", err);
-
-    res.status(500).json({
-      success: false,
-      error: {
-        message: "Something went wrong",
-        errorCode: "INTERNAL_ERROR",
-      },
-    });
-  }
-};
+import { sendError } from "../utils/responseHelper";
 
 export const globalErrorHandler = (
   err: any,
@@ -91,6 +72,7 @@ export const globalErrorHandler = (
 ) => {
   let error = err;
 
+  // Normalize unknown errors
   if (!(error instanceof AppError)) {
     error = new AppError(
       error.message || "Unknown error",
@@ -101,9 +83,37 @@ export const globalErrorHandler = (
     );
   }
 
-  if (process.env.NODE_ENV === "development") {
-    return sendDevError(error, res);
-  } else {
-    return sendProdError(error, res);
+  const isDev = process.env.NODE_ENV === "development";
+
+  // DEV: full details
+  if (isDev) {
+    return sendError(res, {
+      code: error.errorCode || "INTERNAL_ERROR",
+      message: error.message,
+      statusCode: error.statusCode,
+      details: {
+        ...error.details,
+        stack: error.stack,
+      },
+    });
   }
+
+  // PROD: operational errors
+  if (error.isOperational) {
+    return sendError(res, {
+      code: error.errorCode || "INTERNAL_ERROR",
+      message: error.message,
+      statusCode: error.statusCode,
+      details: error.details,
+    });
+  }
+
+  // PROD: unknown crash
+  console.error("💥 UNEXPECTED ERROR:", error);
+
+  return sendError(res, {
+    code: "INTERNAL_ERROR",
+    message: "Something went wrong",
+    statusCode: 500,
+  });
 };

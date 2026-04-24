@@ -7,9 +7,13 @@ export const notFound = (
   next: NextFunction
 ): void => {
   next(
-    Errors.NOT_FOUND("Route not found", {
-      method: req.method,
-      url: req.originalUrl,
+    Errors.NOT_FOUND({
+      code: "ROUTE_NOT_FOUND",
+      message: "Route not found",
+      details: {
+        method: req.method,
+        url: req.originalUrl,
+      },
     })
   );
 };

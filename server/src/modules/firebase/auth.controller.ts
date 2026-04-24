@@ -11,21 +11,30 @@ import { mapFirebaseProvider } from "../../core/utils/providerMapper";
 export const login: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     if (!req.user) {
-      throw Errors.UNAUTHORIZED("Authenticated user not found");
+      throw Errors.UNAUTHORIZED({
+        code: "UNAUTHORIZED",
+        message: "Authentication required",
+      });
     }
 
     const firebase = req.user.firebase;
     const rawProvider = firebase?.sign_in_provider;
 
     if (!rawProvider || rawProvider === "password") {
-      throw Errors.BAD_REQUEST("OAuth provider required");
+      throw Errors.BAD_REQUEST({
+        code: "OAUTH_PROVIDER_REQUIRED",
+        message: "OAuth provider is required",
+      });
     }
 
     const provider = mapFirebaseProvider(rawProvider);
 
     const providerId = firebase.identities?.[rawProvider]?.[0];
     if (!providerId) {
-      throw Errors.BAD_REQUEST("Provider identity missing");
+      throw Errors.BAD_REQUEST({
+        code: "OAUTH_PROVIDER_REQUIRED",
+        message: "Provider identity missing",
+      });
     }
 
     const result = await authService.loginService({
@@ -76,18 +85,20 @@ export const login: RequestHandler = asyncHandler(
 //     res.status(200).json(successResponse(null, "User logged out", 200));
 //   },
 // );
-export const logout: RequestHandler = asyncHandler(async (req: Request, res: Response) => {
-  const refreshToken = req.cookies?.refreshToken;
-  const authPayload = req.auth;
+export const logout: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const refreshToken = req.cookies?.refreshToken;
+    const authPayload = req.auth;
 
-  clearAuthCookies(res);
+    clearAuthCookies(res);
 
-  if (refreshToken && authPayload?.id) {
-    await authService.logoutService(refreshToken, authPayload.id);
-  }
+    if (refreshToken && authPayload?.id) {
+      await authService.logoutService(refreshToken, authPayload.id);
+    }
 
-  return sendSuccess(res, z.null(), null, "User logged out");
-});
+    return sendSuccess(res, z.null(), null, "User logged out");
+  },
+);
 // export const refreshToken: RequestHandler = async (
 //   req: Request,
 //   res: Response,
@@ -127,7 +138,10 @@ export const refreshToken: RequestHandler = asyncHandler(
 
       if (!token || !authPayload?.id) {
         clearAuthCookies(res);
-        throw Errors.UNAUTHORIZED("Authentication required");
+        throw Errors.UNAUTHORIZED({
+          code: "AUTHENTICATION_REQUIRED",
+          message: "Authentication required",
+        });
       }
 
       const result = await authService.refreshTokenService(

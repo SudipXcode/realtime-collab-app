@@ -3,6 +3,7 @@ import { Prisma, SubscriptionPlan } from "@prisma/client";
 import admin from "../../core/lib/firebase"; // ✅ your existing setup
 import { Errors } from "../../core/errors/customeError.errors";
 import { UserProfileResponseDTO } from "../../dto/profile.dto";
+import cloudinary from "../../core/lib/cloudinary";
 
 /* ================= GET PROFILE ================= */
 
@@ -10,7 +11,10 @@ export const getProfileService = async (
   id: string,
 ): Promise<UserProfileResponseDTO> => {
   if (!id) {
-    throw Errors.BAD_REQUEST("Invalid user id");
+    throw Errors.BAD_REQUEST({
+      code: "INVALID_USER_ID",
+      message: "Invalid user id",
+    });
   }
 
   const user = await prisma.user.findUnique({
@@ -41,7 +45,10 @@ export const getProfileService = async (
   });
 
   if (!user) {
-    throw Errors.NOT_FOUND("User not found");
+    throw Errors.NOT_FOUND({
+      code: "USER_NOT_FOUND",
+      message: "User not found",
+    });
   }
 
   const activeSubscription = user.subscriptions[0] ?? null;
@@ -59,116 +66,186 @@ export const getProfileService = async (
 
 /* ================= UPDATE PROFILE ================= */
 
-// export const updateProfileService = async ({
-//   id,
-//   name,
-//   imageUrl,
-//   pictureId,
-// }: {
-//   id: string;
-//   name?: string;
-//   imageUrl?: string;
-//   pictureId?: string;
-// }): Promise<UserProfileUpdateResult> => {
-//   if (!id) {
-//     throw Errors.BAD_REQUEST("Invalid user id");
-//   }
+export const updateProfileService = async ({
+  id,
+  name,
+  imageUrl,
+  pictureId,
+}: {
+  id: string;
+  name?: string | null;
+  imageUrl?: string | null;
+  pictureId?: string | null;
+}): Promise<UserProfileResponseDTO> => {
+  if (!id) {
+    throw Errors.BAD_REQUEST({
+      code: "INVALID_USER_ID",
+      message: "Invalid user id",
+    });
+  }
 
-//   const user = await prisma.user.findUnique({
-//     where: { id },
-//     select: { pictureId: true },
-//   });
+  /* ================= GET EXISTING USER ================= */
+  const existingUser = await prisma.user.findUnique({
+    where: { id },
+    select: { pictureId: true },
+  });
 
-//   if (!user) {
-//     throw Errors.NOT_FOUND("User not found");
-//   }
+  if (!existingUser) {
+    throw Errors.NOT_FOUND({
+      code: "USER_NOT_FOUND",
+      message: "User not found",
+    });
+  }
 
-//   const data: Prisma.UserUpdateInput = {};
+  /* ================= BUILD UPDATE DATA ================= */
+  const data: Prisma.UserUpdateInput = {};
 
-//   if (name && name.trim().length >= 3) {
-//     data.name = name.trim();
-//   }
+  // ✅ NAME (already validated by Zod)
+  if (typeof name === "string") {
+    data.name = name; // already trimmed + validated
+  }
 
-//   if (imageUrl && pictureId) {
-//     data.picture = imageUrl;
-//     data.pictureId = pictureId;
-//   }
+  // ✅ IMAGE (only if both exist)
+  if (typeof imageUrl === "string" && typeof pictureId === "string") {
+    data.picture = imageUrl;
+    data.pictureId = pictureId;
+  }
 
-//   if (Object.keys(data).length === 0) {
-//     throw Errors.BAD_REQUEST("Nothing to update");
-//   }
+  if (Object.keys(data).length === 0) {
+    throw Errors.BAD_REQUEST({
+      code: "NOTHING_TO_UPDATE",
+      message: "Nothing to update",
+    });
+  }
 
-//   const updatedUser = await prisma.user.update({
-//     where: { id },
-//     data,
-//   });
+  /* ================= UPDATE USER ================= */
+  let updatedUser;
 
-//   // ✅ Delete OLD image safely (non-blocking)
-//   if (pictureId && user.pictureId) {
-//     cloudinary.uploader
-//       .destroy(user.pictureId)
-//       .catch((err) =>
-//         console.error("Cloudinary old image delete failed:", err)
-//       );
-//   }
+  try {
+    updatedUser = await prisma.user.update({
+      where: { id },
+      data,
+      include: {
+        accounts: {
+          select: { provider: true },
+        },
+        subscriptions: {
+          where: {
+            plan: SubscriptionPlan.PRO,
+            endDate: { gt: new Date() },
+          },
+          select: { endDate: true },
+          orderBy: { endDate: "desc" },
+          take: 1,
+        },
+      },
+    });
+  } catch (err) {
+    console.error("❌ Update failed:", err);
+    throw Errors.INTERNAL({
+      code: "PROFILE_UPDATE_FAILED",
+      message: "Failed to update profile",
+    });
+  }
 
-//   return {
-//     name: updatedUser.name,
-//     picture: updatedUser.picture,
-//   };
-// };
+  /* ================= DELETE OLD IMAGE ================= */
+  if (
+    typeof pictureId === "string" &&
+    existingUser.pictureId &&
+    existingUser.pictureId !== pictureId
+  ) {
+    cloudinary.uploader
+      .destroy(existingUser.pictureId)
+      .catch((err) => console.error("❌ Old image delete failed:", err));
+  }
+
+  /* ================= FORMAT RESPONSE ================= */
+  const activeSubscription = updatedUser.subscriptions[0] ?? null;
+
+  return {
+    id: updatedUser.id,
+    email: updatedUser.email,
+    name: updatedUser.name,
+    picture: updatedUser.picture,
+    providers: updatedUser.accounts.map((acc) => acc.provider),
+    isPro: !!activeSubscription,
+    proExpiresAt: activeSubscription?.endDate ?? null,
+  };
+};
+
 // /* ================= DELETE ACCOUNT ================= */
 
-// export const deleteAccountService = async (id: string): Promise<void> => {
-//   if (!id) {
-//     throw Errors.BAD_REQUEST("Invalid user id");
-//   }
+export const deleteAccountService = async (id: string): Promise<void> => {
+  if (!id) {
+    throw Errors.BAD_REQUEST({
+      code: "INVALID_USER_ID",
+      message: "Invalid user id",
+    });
+  }
 
-//   const user = await prisma.user.findUnique({
-//     where: { id },
-//     select: {
-//       pictureId: true,
-//       accounts: {
-//         select: {
-//           firebaseId: true,
-//         },
-//       },
-//     },
-//   });
+  /* ================= GET USER ================= */
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      pictureId: true,
+      accounts: {
+        select: {
+          firebaseId: true,
+        },
+      },
+    },
+  });
 
-//   if (!user) {
-//     throw Errors.NOT_FOUND("User not found");
-//   }
+  if (!user) {
+    throw Errors.NOT_FOUND({
+      code: "USER_NOT_FOUND",
+      message: "User not found",
+    });
+  }
 
-//   /* ================= DELETE FIREBASE ================= */
+  /* ================= DELETE FIREBASE ================= */
 
-//   const firebaseId = user.accounts.find((acc) => acc.firebaseId)?.firebaseId;
+  const firebaseId = user.accounts.find((acc) => acc.firebaseId)?.firebaseId;
 
-//   if (firebaseId) {
-//     try {
-//       await admin.auth().deleteUser(firebaseId);
-//     } catch (err: any) {
-//       if (err.code === "auth/user-not-found") {
-//         console.warn("Firebase user already deleted:", firebaseId);
-//       } else {
-//         console.error("Firebase delete failed:", err);
-//         // ✅ DO NOT throw (external dependency)
-//       }
-//     }
-//   }
+  if (firebaseId) {
+    try {
+      await admin.auth().deleteUser(firebaseId);
+    } catch (err: any) {
+      if (err.code === "auth/user-not-found") {
+        console.warn("⚠️ Firebase user already deleted:", firebaseId);
+      } else {
+        console.error("❌ Firebase delete failed:", err);
+        // ❗ Do NOT throw → external system should not break DB consistency
+      }
+    }
+  }
 
-//   /* ================= DELETE USER (DB) ================= */
+  /* ================= DELETE USER (DB - TRANSACTION SAFE) ================= */
 
-//   // Cascades to Account, RefreshToken, Subscription, List memberships etc.
-//   await prisma.user.delete({
-//     where: { id },
-//   });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.user.delete({
+        where: { id },
+      });
+    });
+  } catch (err) {
+    console.error("❌ DB delete failed:", err);
+    throw Errors.INTERNAL({
+      code: "ACCOUNT_DELETE_FAILED",
+      message: "Failed to delete account",
+    });
+  }
 
-//   /* ================= DELETE CLOUDINARY ================= */
+  /* ================= DELETE CLOUDINARY (ASYNC CLEANUP) ================= */
 
-//   if (user.pictureId) {
-//     cloudinary.uploader
-//       .destroy(user.pictureId)
-//       .catch((err) => console.error("Cloudinary delete failed:", err));
-//   }
-// };
+  if (user.pictureId) {
+    cloudinary.uploader
+      .destroy(user.pictureId)
+      .then(() => {
+        console.log("✅ Cloudinary image deleted:", user.pictureId);
+      })
+      .catch((err) => {
+        console.error("❌ Cloudinary delete failed:", err);
+      });
+  }
+};

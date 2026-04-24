@@ -219,7 +219,10 @@ export const loginService = async (
   const { id, email, name, provider, providerId, picture } = input;
 
   if (!email) {
-    throw Errors.BAD_REQUEST("Email not found in authentication token");
+    throw Errors.BAD_REQUEST({
+      code: "EMAIL_MISSING",
+      message: "Email not found in authentication token",
+    });
   }
 
   const user = await prisma.$transaction(
@@ -303,14 +306,20 @@ export const refreshTokenService = async (
   });
 
   if (!dbToken || dbToken.userId !== userId) {
-    throw Errors.UNAUTHORIZED("REFRESH_TOKEN_INVALID");
+    throw Errors.UNAUTHORIZED({
+      code: "REFRESH_TOKEN_INVALID",
+      message: "Invalid refresh token",
+    });
   }
 
   if (dbToken.expiresAt < new Date()) {
     await prisma.refreshToken.delete({
       where: { token: refreshToken },
     });
-    throw Errors.UNAUTHORIZED("REFRESH_TOKEN_EXPIRED");
+    throw Errors.UNAUTHORIZED({
+      code: "REFRESH_TOKEN_EXPIRED",
+      message: "Refresh token expired",
+    });
   }
 
   const user = await prisma.user.findUnique({
@@ -319,7 +328,10 @@ export const refreshTokenService = async (
   });
 
   if (!user) {
-    throw Errors.UNAUTHORIZED("REFRESH_TOKEN_INVALID");
+    throw Errors.UNAUTHORIZED({
+      code: "REFRESH_TOKEN_INVALID",
+      message: "Invalid refresh token",
+    });
   }
 
   const newAccessToken = generateAccessToken(user.id, user.email);

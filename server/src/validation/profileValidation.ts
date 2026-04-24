@@ -12,6 +12,10 @@ export const UserProfileResponseSchema = z.object({
 });
 
 export const UserProfileUpdateSchema = z.object({
-  name: z.string().nullable().optional(),
-  picture: z.string().nullable().optional(),
+  name: z
+    .string()
+    .trim()
+    .min(3, "Name must be at least 3 characters")
+    .optional()
+    .nullable(),
 });

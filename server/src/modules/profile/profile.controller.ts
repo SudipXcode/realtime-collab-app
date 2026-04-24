@@ -1,29 +1,39 @@
+import { z } from "zod";
 import { Request, Response, RequestHandler } from "express";
 import {
   UserProfileResponseSchema,
   UserProfileResponseDTO,
+  UserProfileUpdateSchema,
 } from "../../dto/profile.dto";
 import * as profileService from "./profile.service";
 import { Errors } from "../../core/errors/customeError.errors";
 import { sendSuccess } from "../../core/utils/responseHelper";
 import { asyncHandler } from "../../core/middlewares/asyncHandler.middleware";
+import { clearAuthCookies } from "../../core/utils/authCookie";
 
+const EmptyResponseSchema = z.object({});
 export const getProfile: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const authPayload = req.auth;
 
     if (!authPayload) {
-      throw Errors.UNAUTHORIZED("Authentication required");
+      throw Errors.UNAUTHORIZED({
+        code: "AUTH_REQUIRED",
+        message: "Authentication required",
+      });
     }
 
     const id = authPayload.id as string;
 
     if (!id) {
-      throw Errors.BAD_REQUEST("Invalid user id in token");
+      throw Errors.BAD_REQUEST({
+        code: "INVALID_USER_ID",
+        message: "Invalid user id in token",
+      });
     }
 
     const profile = await profileService.getProfileService(id);
-  
+
     const response: UserProfileResponseDTO = {
       id: profile.id,
       email: profile.email,
@@ -44,76 +54,115 @@ export const getProfile: RequestHandler = asyncHandler(
   },
 );
 
-// export const updateProfile = asyncHandler(
-//   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//     const authPayload = req.auth;
+export const updateProfile: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const authPayload = req.auth;
 
-//     if (!authPayload) {
-//       return next(Errors.UNAUTHORIZED("Authentication required"));
-//     }
+    if (!authPayload) {
+      throw Errors.UNAUTHORIZED({
+        code: "AUTH_REQUIRED",
+        message: "Authentication required",
+      });
+    }
 
-//     const id = authPayload.id as string;
+    const id = authPayload.id as string;
 
-//     if (!id) {
-//       return next(Errors.BAD_REQUEST("Invalid user id in token"));
-//     }
+    if (!id) {
+      throw Errors.BAD_REQUEST({
+        code: "INVALID_USER_ID",
+        message: "Invalid user id in token",
+      });
+    }
+    const parsed = UserProfileUpdateSchema.safeParse(req.body);
 
-//     const { name } = req.body;
-//     const file = req.file as Express.Multer.File | undefined;
+    if (!parsed.success) {
+      throw Errors.VALIDATION({
+        code: "VALIDATION_ERROR",
+        message: "Invalid input",
+        details: parsed.error.flatten(),
+      });
+    }
 
-//     let imageUrl: string | undefined;
-//     let newPublicId: string | undefined;
+    const { name } = parsed.data;
+    const file = req.file as Express.Multer.File | undefined;
 
-//     if (file) {
-//       imageUrl = file.path;
-//       newPublicId = file.filename;
-//     }
+    /* ================= NOTHING CHECK ================= */
+    if (name === undefined && !file) {
+      throw Errors.BAD_REQUEST({
+        code: "NOTHING_TO_UPDATE",
+        message: "Nothing to update",
+      });
+    }
 
-//     try {
-//       // ✅ ONLY call service
-//       const updatedUser = await profileService.updateProfileService({
-//         id,
-//         name,
-//         imageUrl,
-//         pictureId: newPublicId,
-//       });
+    /* ================= HANDLE FILE ================= */
+    let imageUrl: string | undefined;
+    let newPublicId: string | undefined;
 
-//       res
-//         .status(200)
-//         .json(
-//           successResponse(updatedUser, "Profile updated successfully", 200),
-//         );
-//     } catch (error) {
-//       // ✅ ONLY cleanup new uploaded image if something fails
-//       if (newPublicId) {
-//         try {
-//           await cloudinary.uploader.destroy(newPublicId);
-//         } catch (cleanupError) {
-//           console.error("Failed to delete orphan image:", cleanupError);
-//         }
-//       }
+    if (file) {
+      imageUrl = file.path; // Cloudinary URL
+      newPublicId = file.filename; // Cloudinary public_id
+    }
 
-//       return next(error);
-//     }
-//   },
-// );
+    /* ================= SERVICE ================= */
+    const updatedUser = await profileService.updateProfileService({
+      id,
+      name,
+      imageUrl,
+      pictureId: newPublicId,
+    });
 
-// export const deleteAccount = asyncHandler(
-//   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//     const authPayload = req.auth;
-//     if (!authPayload) {
-//       return next(Errors.UNAUTHORIZED("Authentication required"));
-//     }
-//     const id = authPayload.id as string;
-//     if (!id) {
-//       return next(Errors.BAD_REQUEST("Invalid user id in token"));
-//     }
-//     await profileService.deleteAccountService(id);
+    /* ================= RESPONSE ================= */
+    const result: UserProfileResponseDTO = {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      picture: updatedUser.picture,
+      providers: updatedUser.providers,
+      isPro: updatedUser.isPro,
+      proExpiresAt: updatedUser.proExpiresAt,
+    };
 
-//     clearAuthCookies(res);
-//     res
-//       .status(200)
-//       .set("Cache-Control", "no-store, private") // no caching
-//       .json(successResponse({}, "your account deleted successfully", 200));
-//   },
-// );
+    return sendSuccess(
+      res,
+      UserProfileResponseSchema, // ✅ correct schema
+      result,
+      "Profile updated successfully", // ✅ correct message
+      200,
+    );
+  },
+);
+
+export const deleteAccount: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const authPayload = req.auth;
+
+    if (!authPayload) {
+      throw Errors.UNAUTHORIZED({
+        code: "AUTH_REQUIRED",
+        message: "Authentication required",
+      });
+    }
+
+    const id = authPayload.id as string;
+
+    if (!id) {
+      throw Errors.BAD_REQUEST({
+        code: "INVALID_USER_ID",
+        message: "Invalid user id in token",
+      });
+    }
+
+    await profileService.deleteAccountService(id);
+
+    // 🔥 clear cookies after deletion
+    clearAuthCookies(res);
+
+    return sendSuccess(
+      res,
+      EmptyResponseSchema,
+      {}, // empty payload
+      "Your account deleted successfully",
+      200,
+    );
+  },
+);
