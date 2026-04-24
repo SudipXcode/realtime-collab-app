@@ -5,8 +5,9 @@ import { useOutsideClick } from '@/hooks/useOutSideclick';
 import { usePayment } from '@/hooks/usePayment';
 import { showToast } from '@/lib/toast';
 import { Check, X } from 'lucide-react';
+import Image from 'next/image';
 import React, { useEffect } from 'react'
-
+import EsewaLogo from '../../public/esewa-logo.png'
 const UpgradePremiumDialog = ({ open, onOpenChange }) => {
     const closeRef = React.useRef(null)
     useOutsideClick(closeRef, () => onOpenChange(false), open);
@@ -51,16 +52,16 @@ const UpgradePremiumDialog = ({ open, onOpenChange }) => {
     return (
         <div className='w-full h-screen flex justify-center items-center bg-black/40 fixed top-0 z-50'>
             <div ref={closeRef} className='w-100 relative flex flex-col justify-between border border-[#2D2D2D] bg-[#242424] h-auto p-4 rounded-2xl'>
-                <button 
-                    onClick={() => onOpenChange(false)} 
+                <button
+                    onClick={() => onOpenChange(false)}
                     className='absolute top-4 text-[#9191a0] hover:text-[#4772FA] transition ease-linear duration-150 right-4'
                     disabled={loading}
                 >
                     <X size={18} strokeWidth={2.5} />
                 </button>
-                
+
                 <h1 className='text-[18px] font-bold'>Upgrade to premium</h1>
-                
+
                 <ul className='w-full h-auto mt-5 flex flex-col gap-2'>
                     <li className='flex items-center gap-2 text-[13px] font-medium text-[#9191a0]'><Check className='text-[#4772FB]' size={16} />Multiple Calender Views</li>
                     <li className='flex items-center gap-2 text-[13px] font-medium text-[#9191a0]'><Check className='text-[#4772FB]' size={16} />Calendar Subscription</li>
@@ -70,18 +71,18 @@ const UpgradePremiumDialog = ({ open, onOpenChange }) => {
                     <li className='flex items-center gap-2 text-[13px] font-medium text-[#9191a0]'><Check className='text-[#4772FB]' size={16} />Statistics</li>
                     <li className='flex items-center gap-2 text-[13px] font-medium text-[#9191a0]'><Check className='text-[#4772FB]' size={16} />More</li>
                 </ul>
-                
+
                 <div className='w-full h-auto flex flex-col gap-4 mt-4'>
                     <div className='w-full flex flex-col gap-1 h-auto border-2 border-[#2D2D2D] rounded-xl py-3 px-4'>
                         <p className='text-[13px] font-medium'>Monthly</p>
                         <h4 className='text-[14px] font-semibold'>NPR 149.00 / m</h4>
                     </div>
-                    
+
                     <div className='w-full h-auto flex justify-between'>
                         <p className='text-[13px] font-medium'>Payment Method</p>
-                        <img className='w-auto h-4.5 object-contain' src="https://epicmountainbike.com/themes/default/shop/assets/images/esewa-logo.png" alt="eSewa" />
+                        <Image width={200} height={200} className='w-auto h-4.5 object-contain' src={EsewaLogo} alt="eSewa" />
                     </div>
-                    
+
                     <button
                         onClick={handlePayPremium}
                         disabled={loading}
@@ -89,7 +90,7 @@ const UpgradePremiumDialog = ({ open, onOpenChange }) => {
                     >
                         {loading ? "Processing..." : "NPR 149.00 / m  Upgrade Now"}
                     </button>
-                    
+
                     <p className='text-[#7C7C7C] text-center text-[12px] font-medium'>I have read and accept Pricing Terms. Cancel anytime</p>
                 </div>
             </div>

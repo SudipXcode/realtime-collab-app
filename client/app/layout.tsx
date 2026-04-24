@@ -7,7 +7,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ReduxProvider from "@/redux/ReduxProvider";
 import DialogProvider from "@/components/ui/DialogProvider";
-import MountedProvider from '@/components/layout/MountProvider'
+
 
 export const metadata: Metadata = {
   title: "Taskpilot",
@@ -27,9 +27,9 @@ export default function RootLayout({
           <QueryProvider>
             <DialogProvider />
             <MobileGuard >
-              <MountedProvider>
-                {children}
-              </MountedProvider>
+
+              {children}
+
             </MobileGuard>
             <ToastContainer />
           </QueryProvider>
