@@ -1,36 +1,54 @@
 "use client"
-import { CalendarDays, Crown, HardDrive, Library, Plus, } from 'lucide-react'
+import { Bot, CalendarCheck2, Crown, HardDrive, Library, Plus, Videotape, } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'
 import { usePath } from "@/hooks/usePathname"
 import { openPay } from '@/redux/slices/paySlice'
-import { useDispatch } from 'react-redux'
-// import { openList } from '@/redux/slices/ListSlice'
-// import { useDispatch, useSelector } from 'react-redux'
-// import { openPay } from '@/redux/slices/paySlice'
-// import { fetchLists } from '@/redux/slices/ListsTitlesSlice'
-// import { setSelectedTask } from '@/redux/slices/TaskDetails'
-// import { setSelectedInboxTask } from '@/redux/slices/InboxDetails'
+import { useDispatch, useSelector } from 'react-redux'
+import { openList } from '@/redux/slices/ListSlice'
+import { fetchLists } from '@/redux/slices/ListsTitlesSlice'
 
 const ListNav: React.FC = (): JSX.Element => {
     const path = usePath()
     const dispatch = useDispatch()
     const isNewlist = false
-    // const { data, loading, loaded } = useSelector(
-    //     (state: RootState) => state.listTitle
-    // );
+    const { data, loading, loaded } = useSelector(
+        (state: RootState) => state.listTitle
+    );
 
-    // React.useEffect(() => {
-    //     if (!loaded) {
-    //         dispatch(fetchLists());
-    //     }
-    // }, [loaded, dispatch]);
+    React.useEffect(() => {
+        if (!loaded) {
+            dispatch(fetchLists());
+        }
+    }, [loaded, dispatch]);
+
+    function Shimmer({ className }: { className?: string }) {
+        return (
+            <div
+                className={`relative overflow-hidden rounded bg-white/5 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.6s_infinite] before:bg-linear-to-r before:from-transparent before:via-white/10 before:to-transparent ${className}`}
+            />
+        )
+    }
 
 
     return (
         <div className='w-60 flex-none   flex flex-col  justify-center items-center bg-[#1C1C1C] border-r border-[#2D2D2D] h-screen  '>
             <div className='w-full flex flex-col items-center justify-start h-full px-3'>
-                <div className='flex  w-full py-4 h-25  flex-col gap-0.5'>
+                <div className='flex  w-full py-4 h-45  flex-col gap-0.5'>
+                    <Link href={"/meetings"} >
+                        <button
+                            title='Meetings' className={` ${path === "/meetings" ? "bg-[#2D2D2D]" : "hover:bg-[#232323] transition ease-in duration-150"} w-full  h-auto flex px-3 rounded-3xl py-2 gap-2 text-[13px] font-medium  items-center`}>
+                            <Videotape strokeWidth={2} size={17} />
+                            Meetings
+                        </button>
+                    </Link>
+                    <Link href={"/taskpilotAi"} >
+                        <button
+                            title='TaskpilotAi' className={` ${path === "/taskpilotAi" ? "bg-[#2D2D2D]" : "hover:bg-[#232323] transition ease-in duration-150"} w-full  h-auto flex px-3 rounded-3xl py-2 gap-2 text-[13px] font-medium  items-center`}>
+                            <Bot strokeWidth={2} size={18} />
+                            Taskpilot AI
+                        </button>
+                    </Link>
                     <Link href={"/today"}>
                         <button
                             // onClick={() => {
@@ -39,11 +57,10 @@ const ListNav: React.FC = (): JSX.Element => {
                             //     dispatch(setSelectedTask())
                             // }  }
                             title='Today' className={` ${path === "/today" ? "bg-[#2D2D2D]" : "hover:bg-[#232323] transition ease-in duration-150"} w-full  h-auto flex px-3 rounded-3xl py-2 gap-2 text-[13px] font-medium   items-center`}>
-                            <CalendarDays strokeWidth={2} size={17} />
+                            <CalendarCheck2 strokeWidth={2} size={17} />
                             Today
                         </button>
                     </Link>
-
                     <Link href={"/inbox"}>
                         <button
                             //  onClick={() => {
@@ -61,38 +78,31 @@ const ListNav: React.FC = (): JSX.Element => {
                 </div>
                 <div className='w-full h-auto max-h-72  flex flex-col items-center justify-start pt-2 pb-3 border-t border-[#2D2D2D] '>
                     <button
-                        //  onClick={() => dispatch(openList())} 
+                        onClick={() => dispatch(openList())}
                         title='Create list' className='w-full flex-none text-[#7C7C7C] hover:text-white transition ease-linear duration-150 flex items-center justify-between h-7.5  px-3 text-[13px] font-medium  '>
                         Lists
                         <Plus strokeWidth={2} size={17} />
                     </button>
                     <div className='w-full pt-1 h-auto flex flex-col gap-1  justify-between  '>
-                        {/* {loading ? <div className='w-full flex flex-col gap-2  h-full'>
-                            {[140, 180, 120].map((w, i) => (
+                        {loading ? <div className='w-full flex flex-col gap-2  h-full'>
+                            {[140, 180].map((w, i) => (
                                 <div key={i} className="flex items-center gap-3 px-2 py-3 border-b border-white/5">
                                     <Shimmer className="h-4 w-4 rounded shrink-0" />
                                     <div className="flex flex-col gap-2 flex-1">
                                         <Shimmer className="h-3 rounded" style={{ width: w }} />
                                         <Shimmer className="h-2.5 rounded opacity-60" style={{ width: w + 60 }} />
                                     </div>
-
                                 </div>
                             ))}
                         </div> : <div className='w-full flex flex-col gap-0.5 h-full'>
-                            {data?.data?.slice(0, 5).map((i) => (
+                            {data?.slice(0, 5).map((i) => (
                                 <Link key={i.id} href={`/inbox/${i.id}`}>
-                                    <button onClick={() => {
-
-                                        dispatch(setSelectedInboxTask())
-                                        dispatch(setSelectedTask())
-                                    }
-
-                                    } title={i.title} className={`${path === `/inbox/${i.id}` ? "bg-[#2D2D2D]" : "hover:bg-[#232323] transition ease-in duration-150"} w-full h-auto flex px-3 rounded-3xl py-1.5 gap-2 text-[13px] font-medium items-center`}>
-                                        <span className="overflow-hidden text-ellipsis whitespace-nowrap w-full text-left">{i.title}</span>
+                                    <button title={i.name} className={`${path === `/inbox/${i.id}` ? "bg-[#2D2D2D]" : "hover:bg-[#232323] transition ease-in duration-150"} w-full h-auto flex px-3 rounded-3xl py-1.5 gap-2 text-[13px] font-medium items-center`}>
+                                        <span className="overflow-hidden text-ellipsis whitespace-nowrap w-full text-left">{i.name}</span>
                                     </button>
                                 </Link>
                             ))}
-                        </div>} */}
+                        </div>}
                         <Link href={"/library"}>
                             <button title='Library' className={` ${path === "/library" ? "bg-[#2D2D2D]" : "hover:bg-[#232323] transition ease-in duration-150"} w-full relative  h-auto flex px-3 rounded-3xl py-2 gap-2 text-[13px] font-medium   items-center`}>
                                 <Library strokeWidth={2} size={18} />

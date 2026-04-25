@@ -6,6 +6,8 @@ import type { RootState, AppDispatch } from "@/redux/store"
 import { closeProfile } from "@/redux/slices/profileSlice"
 import UpgradePremiumDialog from "../profile/UpgradePremiumDialog"
 import { closePay } from "@/redux/slices/paySlice"
+import ListCreateDialog from "../lists/ListCreateDialog"
+import { closeList } from "@/redux/slices/ListSlice"
 
 export default function DialogProvider(): JSX.Element {
     const dispatch = useDispatch<AppDispatch>()
@@ -16,6 +18,9 @@ export default function DialogProvider(): JSX.Element {
 
     const isPayOpen = useSelector<RootState, boolean>(
         (state) => state.pay.isPayOpen
+    )
+        const isListOpen = useSelector<RootState, boolean>(
+        (state) => state.list.isListOpen
     )
     return (
         <>
@@ -32,6 +37,12 @@ export default function DialogProvider(): JSX.Element {
                 open={isPayOpen}
                 onOpenChange={(open: boolean) =>
                     !open && dispatch(closePay())
+                }
+            />}
+                {isListOpen && <ListCreateDialog
+                open={isListOpen}
+                onOpenChange={(open: boolean) =>
+                    !open && dispatch(closeList())
                 }
             />}
         </>

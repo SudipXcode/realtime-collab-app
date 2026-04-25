@@ -1,9 +1,23 @@
-import React from 'react'
+// app/library/page.tsx
 
-export default function page() {
+import type { Metadata } from "next";
+import Sidebar from "@/components/layout/Sidebar";
+import ListNav from "@/components/layout/ListNav";
+
+
+
+export const metadata: Metadata = {
+  title: "Library – TaskPilot",
+  description:
+    "Manage and organize all your tasks in one place.",
+};
+
+export default function Page() {
   return (
-    <div>
-      
+    <div className="w-full flex h-screen relative">
+      <Sidebar />
+      <ListNav />
+    
     </div>
-  )
+  );
 }

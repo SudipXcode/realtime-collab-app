@@ -3,283 +3,315 @@
 
 import { ChevronDown, Plus } from "lucide-react";
 import React, { useState, useEffect } from "react";
-// import LibraryTabs from "./LibraryTabs";
-// import Approvel from "./tabs/Approvel";
-// import Collaboration from "./tabs/Collaboration";
-// import Favourites from "./tabs/Favourites";
-// import Recent from "./tabs/Recent";
-// import SortOptions from "./SortOptions";
-// import { useOutsideClick } from "@/hooks/useOutSideclick";
-// import PageHeading from "../ui/PageHeading";
-// import { useDispatch } from "react-redux";
-// import { openList } from "@/redux/slices/ListSlice";
-// import { useApi } from "@/hooks/useApi";
-// import { showToast } from "@/lib/toast";
-// import { fetchLists } from "@/redux/slices/ListsTitlesSlice";
+import LibraryTabs from "./LibraryTabs";
+import Approvel from "./tabs/Approvel";
+import Collaboration from "./tabs/Collaboration";
+import Favourites from "./tabs/Favourites";
+import Recent from "./tabs/Recent";
+import SortOptions from "./SortOptions";
+import { useOutsideClick } from "@/hooks/useOutSideclick";
+import PageHeading from "../ui/PageHeading";
+import { useDispatch } from "react-redux";
+import { openList } from "@/redux/slices/ListSlice";
+import { useApi } from "@/hooks/useApi";
+import { showToast } from "@/lib/toast";
+import { fetchLists } from "@/redux/slices/ListsTitlesSlice";
 
 // /* ================= TYPES ================= */
 
-// type Tab = "Recent" | "Favourites" | "Collaboration" | "Approval";
-// export type Sort = "Date" | "Time" | "Tags" | "Priority";
+type Tab = "Recent" | "Favourites" | "Collaboration" | "Approval";
+export type Sort = "Date" | "Time" | "Tags" | "Priority";
 
-// const tabs: Tab[] = ["Recent", "Favourites", "Collaboration", "Approval"];
+const tabs: Tab[] = ["Recent", "Favourites", "Collaboration", "Approval"];
 
 // /* ================= HELPERS ================= */
 
-// function getToastMessage(res: unknown, fallback: string) {
-//   return res?.message || res?.data?.message || fallback;
-// }
+function getToastMessage(res: unknown, fallback: string) {
+  return res?.message || res?.data?.message || fallback;
+}
 
-// function getErrorMessage(err: unknown, fallback: string) {
-//   return err?.message || fallback;
-// }
+function getErrorMessage(err: unknown, fallback: string) {
+  return err?.message || fallback;
+}
 
 /* ================= COMPONENT ================= */
 
 const Library: React.FC = () => {
-  // const [activeTab, setActiveTab] = useState<Tab>("Recent");
-  // const [sort, setSort] = useState<Sort>("Date");
-  // const [openSort, setOpenSort] = useState(false);
-  // const [selectedLists, setSelectedLists] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<Tab>("Recent");
+  const [sort, setSort] = useState<Sort>("Date");
+  const [openSort, setOpenSort] = useState(false);
+  const [selectedLists, setSelectedLists] = useState<string[]>([]);
 
-  // const sortRef = React.useRef<HTMLDivElement | null>(null);
-  // useOutsideClick(sortRef, () => setOpenSort(false), openSort);
+  const sortRef = React.useRef<HTMLDivElement | null>(null);
+  useOutsideClick(sortRef, () => setOpenSort(false), openSort);
 
-  // const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
-  // /* ================= MAIN API ================= */
+  /* ================= MAIN API ================= */
 
-  // const { data, loading, callApi, setData } =
-  //   useApi<TaskType[]>("/api/library");
+  const { data, loading, callApi, setData } =
+    useApi<TaskType[]>("/api/library");
 
-  // /* ================= LOAD DATA ================= */
+  /* ================= LOAD DATA ================= */
+  /* ================= FETCH ================= */
 
-  // useEffect(() => {
-  //   callApi({
-  //     method: "GET",
-  //     params: {
-  //       tab: activeTab,
-  //       sort,
-  //     },
-  //   });
-  // }, [activeTab, sort, callApi]);
+  const fetchLibrary = React.useCallback(() => {
+    callApi({
+      method: "GET",
+      params: { tab: activeTab, sort },
+    });
+  }, [callApi, activeTab, sort]);
 
-  // /* ================= REALTIME LISTENER ================= */
+  useEffect(() => {
+    fetchLibrary();
+  }, [fetchLibrary]);
 
-  // useEffect(() => {
-  //   const handler = (e: CustomEvent) => {
-  //     const newList = e.detail;
+  /* ================= REALTIME ================= */
 
-  //     setData((prev) => {
-  //       if (!prev || !prev.data) return prev;
+  useEffect(() => {
+    const handler = () => {
+      fetchLibrary();
+    };
 
-  //       const lists = prev.data.lists || [];
+    window.addEventListener("new-list", handler);
 
-  //       if (lists.some((item) => item.id === newList.id)) {
-  //         return prev;
-  //       }
+    return () => {
+      window.removeEventListener("new-list", handler);
+    };
+  }, [fetchLibrary]);
 
-  //       if (activeTab === "Favourites" && !newList.isFavourite) return prev;
-  //       if (activeTab === "Collaboration" && !newList.isShared) return prev;
-  //       if (activeTab === "Approval" && !newList.isPending) return prev;
+  /* ================= REALTIME LISTENER ================= */
 
-  //       return {
-  //         ...prev,
-  //         data: {
-  //           ...prev.data,
-  //           lists: [newList, ...lists],
-  //         },
-  //       };
-  //     });
-  //   };
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      const newList = e.detail;
 
-  //   window.addEventListener("new-list", handler as EventListener);
+      setData((prev) => {
+        if (!prev || !prev.data) return prev;
 
-  //   return () => {
-  //     window.removeEventListener("new-list", handler as EventListener);
-  //   };
-  // }, [setData, activeTab]);
+        const lists = prev.data.lists || [];
 
-  // /* ================= APIs ================= */
+        if (lists.some((item) => item.id === newList.id)) {
+          return prev;
+        }
 
-  // const { callApi: deleteTask } =
-  //   useApi<{ success: boolean; message?: string; data?: unknown }>(
-  //     "/api/library"
-  //   );
+        if (activeTab === "Favourites" && !newList.isFavourite) return prev;
+        if (activeTab === "Collaboration" && !newList.isShared) return prev;
+        if (activeTab === "Approval" && !newList.isPending) return prev;
 
-  // const { callApi: toggleFavourite } =
-  //   useApi<{ message?: string }>("/api/library/favourite");
+        return {
+          ...prev,
+          data: {
+            ...prev.data,
+            lists: [newList, ...lists],
+          },
+        };
+      });
+    };
 
-  // const { callApi: postApproval } =
-  //   useApi<{ message?: string }>("/api/library/approval");
+    window.addEventListener("new-list", handler as EventListener);
 
-  // /* ================= DELETE ================= */
+    return () => {
+      window.removeEventListener("new-list", handler as EventListener);
+    };
+  }, [setData, activeTab]);
 
-  // const handleDeleteList = async (id?: string) => {
-  //   const ids = id ? [id] : selectedLists;
-  //   if (!data) return;
+  /* ================= APIs ================= */
 
-  //   const prev = data;
+  const { callApi: deleteTask } =
+    useApi<{ success: boolean; message?: string; data?: unknown }>(
+      "/api/library"
+    );
 
-  //   setData((p) => {
-  //     if (!p || !p.data) return p;
+  const { callApi: toggleFavourite } =
+    useApi<{ message?: string }>("/api/library/favourite");
 
-  //     return {
-  //       ...p,
-  //       data: {
-  //         ...p.data,
-  //         lists: p.data.lists.filter((item) => !ids.includes(item.id)),
-  //       },
-  //     };
-  //   });
+  const { callApi: postApproval } =
+    useApi<{ message?: string }>("/api/library/approval");
 
-  //   setSelectedLists([]);
+  /* ================= DELETE ================= */
 
-  //   try {
-  //     const res = await deleteTask({
-  //       method: "DELETE",
-  //       body: { listId: ids },
-  //     });
+  const handleDeleteList = async (id?: string) => {
+    const ids = id ? [id] : selectedLists;
+    if (!data) return;
 
-  //     if (!res?.success) {
-  //       setData(prev);
-  //       showToast(
-  //         getToastMessage(res, "You are not allowed to delete this list"),
-  //         "warning"
-  //       );
-  //       return;
-  //     }
+    const prev = data;
 
-  //     showToast(
-  //       getToastMessage(res, "List deleted successfully"),
-  //       "success"
-  //     );
+    // ✅ instant UI update
+    setData((p) => {
+      if (!p?.data) return p;
 
-  //     dispatch(fetchLists());
-  //   } catch (err) {
-  //     setData(prev);
+      return {
+        ...p,
+        data: p.data.filter((item) => !ids.includes(item.id)),
+      };
+    });
 
-  //     showToast(
-  //       getErrorMessage(err, "Delete failed"),
-  //       "error"
-  //     );
-  //   }
-  // };
+    setSelectedLists([]);
 
-  // /* ================= TOGGLE FAVOURITE ================= */
+    try {
+      const res = await deleteTask({
+        method: "DELETE",
+        body: { listId: ids },
+      });
 
-  // const handleFunctionFavourite = async (id: string) => {
-  //   if (!data) return;
+      if (!res?.success) {
+        setData(prev); // rollback
+        showToast("You are not allowed to delete these lists", "warning");
+        return;
+      }
 
-  //   const prev = data;
+      showToast("Task Deleted", "success");
+      dispatch(fetchLists()); // sidebar sync only
 
-  //   setData((p) => {
-  //     if (!p || !p.data) return p;
+    } catch {
+      setData(prev); // rollback
+      showToast("Error deleting", "error");
+    }
+  };
 
-  //     let updated = p.data.lists.map((item) =>
-  //       item.id === id
-  //         ? { ...item, isFavourite: !item.isFavourite }
-  //         : item
-  //     );
+  /* ================= TOGGLE FAVOURITE ================= */
 
-  //     if (activeTab === "Favourites") {
-  //       updated = updated.filter((i) => i.isFavourite);
-  //     }
+const handleFunctionFavourite = async (id: string) => {
+  if (!data) return;
 
-  //     return {
-  //       ...p,
-  //       data: {
-  //         ...p.data,
-  //         lists: updated,
-  //       },
-  //     };
-  //   });
+  const prev = data;
 
-  //   try {
-  //     const res = await toggleFavourite({
-  //       method: "PATCH",
-  //       body: { listId: id },
-  //     });
+  // ✅ optimistic update
+  setData((p) => {
+    if (!p?.data?.lists) return p;
 
-  //     showToast(
-  //       getToastMessage(res, "Favourite updated"),
-  //       "success"
-  //     );
-  //   } catch (err) {
-  //     setData(prev);
+    let updated = p.data.lists.map((item) =>
+      item.id === id
+        ? { ...item, isFavourite: !item.isFavourite }
+        : item
+    );
 
-  //     showToast(
-  //       getErrorMessage(err, "Favourite update failed"),
-  //       "error"
-  //     );
-  //   }
-  // };
+    if (activeTab === "Favourites") {
+      updated = updated.filter((i) => i.isFavourite);
+    }
 
-  // /* ================= APPROVAL ================= */
+    return {
+      ...p,
+      data: {
+        ...p.data,
+        lists: updated,
+      },
+    };
+  });
 
-  // const handleFunctionApprove = async (
-  //   id: string,
-  //   state: boolean
-  // ) => {
-  //   if (!data) return;
+  try {
+    const res = await toggleFavourite({
+      method: "PATCH",
+      body: { listId: id },
+    });
 
-  //   const prev = data;
+    /* ❌ HANDLE API FAILURE (your main issue) */
+    if (!res?.success) {
+      setData(prev); // rollback UI
 
-  //   setData((p) => {
-  //     if (!p || !p.data) return p;
+      showToast(
+        res?.message || "You are not allowed to modify this list",
+        "warning"
+      );
 
-  //     return {
-  //       ...p,
-  //       data: {
-  //         ...p.data,
-  //         lists: p.data.lists.map((item) =>
-  //           item.id === id
-  //             ? { ...item, isPending: false }
-  //             : item
-  //         ),
-  //       },
-  //     };
-  //   });
+      return; // ⛔ stop further execution
+    }
 
-  //   try {
-  //     const res = await postApproval({
-  //       method: "PATCH",
-  //       body: { listId: id, isApproved: state },
-  //     });
+    /* ✅ SUCCESS */
+    setActiveTab(res.data.isFavourite ? "Favourites" : "Recent");
 
-  //     showToast(
-  //       getToastMessage(
-  //         res,
-  //         state ? "Approved" : "Rejected"
-  //       ),
-  //       state ? "success" : "warning"
-  //     );
+    showToast("Favourite updated", "success");
+  } catch (err) {
+    setData(prev);
 
-  //     callApi({
-  //       method: "GET",
-  //       params: { tab: activeTab, sort },
-  //     });
+    showToast(
+      getErrorMessage(err, "Favourite update failed"),
+      "error"
+    );
+  }
+};
 
-  //     dispatch(fetchLists());
-  //   } catch (err) {
-  //     setData(prev);
+  /* ================= APPROVAL ================= */
 
-  //     showToast(
-  //       getErrorMessage(err, "Approval failed"),
-  //       "error"
-  //     );
-  //   }
-  // };
+  const handleFunctionApprove = async (id: string, state: boolean) => {
+    if (!data) return;
+
+    const prev = data;
+
+    try {
+      const res = await postApproval({
+        method: "PATCH",
+        body: { listId: id, isApproved: state },
+      });
+
+      const status = res?.data?.status;
+      const listId = res?.data?.listId;
+
+      if (!status || !listId) {
+        throw new Error("Invalid response");
+      }
+
+      setData((p) => {
+        const lists = p?.data?.lists;
+        if (!lists) return p;
+
+        let updatedLists;
+
+        if (status === "REJECTED") {
+          // ❌ remove rejected
+          updatedLists = lists.filter((item) => item.id !== listId);
+        } else {
+          // ✅ ACCEPTED → remove from approval tab OR update UI
+          updatedLists = lists.filter((item) => item.id !== listId);
+        }
+
+        return {
+          ...p,
+          data: {
+            ...p.data,
+            lists: updatedLists,
+          },
+        };
+      });
+
+      showToast(
+        getToastMessage(
+          res,
+          status === "ACCEPTED" ? "Approved" : "Rejected"
+        ),
+        status === "ACCEPTED" ? "success" : "warning"
+      );
+      // 🔥 optional background sync (not required for UI correctness)
+      callApi({
+        method: "GET",
+        params: { tab: activeTab, sort },
+      });
+
+      dispatch(fetchLists());
+    } catch (err) {
+      setData(prev);
+      showToast(
+        getErrorMessage(err, "Approval failed"),
+        "error"
+      );
+    }
+  };
 
 
-
-
+  function Shimmer({ className }: { className?: string }) {
+    return (
+      <div
+        className={`relative overflow-hidden rounded bg-white/5 ${className}`}
+      />
+    );
+  }
 
   /* ================= UI ================= */
 
   return (
     <div className="w-full flex flex-col py-6 h-screen">
-      {/* <PageHeading title="All Lists" />
+      <PageHeading title="All Lists" />
 
       <div className="w-full mt-6 px-6 flex items-center">
         <LibraryTabs
@@ -317,9 +349,7 @@ const Library: React.FC = () => {
         </div>
       </div>
 
-      {/* ================= CONTENT ================= */}
-
-      {/* {loading ? (
+      {loading ? (
         <div className="px-8 h-full pt-6">
           {[140, 180, 120, 160, 200].map((w, i) => (
             <div
@@ -335,10 +365,11 @@ const Library: React.FC = () => {
           ))}
         </div>
       ) : (
+
         <div className="w-full flex items-center justify-center h-full">
           {activeTab === "Recent" && (
             <Recent
-              data={data?.data?.lists}
+              data={data?.data ?? []}
               selectedLists={selectedLists}
               setSelectedLists={setSelectedLists}
               handleDeleteList={handleDeleteList}
@@ -348,7 +379,7 @@ const Library: React.FC = () => {
 
           {activeTab === "Favourites" && (
             <Favourites
-              data={data?.data?.lists}
+              data={data?.data ?? []}
               selectedLists={selectedLists}
               setSelectedLists={setSelectedLists}
               handleDeleteList={handleDeleteList}
@@ -358,7 +389,7 @@ const Library: React.FC = () => {
 
           {activeTab === "Collaboration" && (
             <Collaboration
-              data={data?.data?.lists}
+              data={data?.data ?? []}
               selectedLists={selectedLists}
               setSelectedLists={setSelectedLists}
               handleDeleteList={handleDeleteList}
@@ -368,7 +399,7 @@ const Library: React.FC = () => {
 
           {activeTab === "Approval" && (
             <Approvel
-              data={data?.data?.lists}
+              data={data?.data ?? []}
               selectedLists={selectedLists}
               setSelectedLists={setSelectedLists}
               handleDeleteList={handleDeleteList}
@@ -377,7 +408,7 @@ const Library: React.FC = () => {
             />
           )}
         </div>
-      )}  */}
+      )}
     </div>
   );
 };

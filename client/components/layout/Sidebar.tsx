@@ -20,6 +20,8 @@ import Image from "next/image";
 
 const TASK_PATH_PATTERNS: RegExp[] = [
   /^\/inbox$/,
+  /^\/meetings$/,
+  /^\/taskpilotAi$/,
   /^\/library$/,
   /^\/today$/,
   /^\/inbox\/[^/]+$/,
