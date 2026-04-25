@@ -12,6 +12,7 @@ import { asyncHandler } from "../../core/middlewares/asyncHandler.middleware";
 import { clearAuthCookies } from "../../core/utils/authCookie";
 
 const EmptyResponseSchema = z.object({});
+
 export const getProfile: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const authPayload = req.auth;
@@ -53,6 +54,8 @@ export const getProfile: RequestHandler = asyncHandler(
     );
   },
 );
+
+
 
 export const updateProfile: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {

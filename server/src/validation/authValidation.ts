@@ -53,7 +53,7 @@ export const LoginResponseSchema = z
 /* ---------- INPUT ---------- */
 export const loginRequestSchema = z
   .object({
-    id: z.string().min(1),
+    id: z.string().uuid(),
     name: z.string().optional(),
     email: z.string().email().optional(),
     provider: z.nativeEnum(AuthProvider),

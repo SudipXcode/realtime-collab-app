@@ -35,7 +35,7 @@ export const initiatePayment: RequestHandler = asyncHandler(
     const totalAmount = premiumAmount.toFixed(2);
     const userId = req.auth.id;
 
-    console.log("🚀 INIT PAYMENT:", { userId, transactionUuid });
+  
 
     await paymentService.initiatePaymentService(
       userId,

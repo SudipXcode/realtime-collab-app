@@ -4,25 +4,26 @@ import { verifyAccessToken, verifyRefreshToken } from "../utils/jwt";
 import { Errors } from "../errors/customeError.errors";
 import { Request, Response, NextFunction, RequestHandler } from "express";
 
+type ValidateTarget = "body" | "params" | "query";
+
 export const validate =
-  (schema: ZodTypeAny, source: "body" | "query" | "params" = "body") =>
+  (schema: ZodTypeAny, target: ValidateTarget = "body"): RequestHandler =>
   (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const parsed = schema.parse(req[source]);
-      req[source] = parsed;
-      next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return next(
-          Errors.BAD_REQUEST({
-            code: "VALIDATION_ERROR",
-            message: "Request validation failed",
-            details: { issues: error.issues },
-          }),
-        );
-      }
-      next(error);
+    const parsed = schema.safeParse(req[target]);
+
+    if (!parsed.success) {
+      return next(
+        Errors.BAD_REQUEST({
+          code: "VALIDATION_ERROR",
+          message: "Request validation failed",
+        }),
+      );
     }
+
+    // ✅ store validated data safely
+    res.locals[target] = parsed.data;
+
+    next();
   };
 
 export const validateRefreshToken: RequestHandler = (
