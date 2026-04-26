@@ -5,7 +5,11 @@ import {
   validateAccessToken,
 } from "../../core/middlewares/reqValidate.middleware";
 
-import { listSchema } from "../../dto/lists.dto";
+import {
+  listSchema,
+  listIdParamSchema,
+  addMemberSchema,
+} from "../../dto/lists.dto";
 const router: Router = Router();
 
 /* ================= LIST ================= */
@@ -14,30 +18,31 @@ router.post(
   "/",
   validateAccessToken,
   validate(listSchema, "body"),
-  listController.postList
+  listController.postList,
 );
 router.get("/", validateAccessToken, listController.getLists);
-// router.get(
-//   "/:listId",
-//   validateAccessToken,
-//   validate(listIdParamSchema, "params"),
-//   listController.getSingleList,
-// );
+
+router.get(
+  "/:listId",
+  validateAccessToken,
+  validate(listIdParamSchema, "params"),
+  listController.getSingleList,
+);
 
 // /* ================= MEMBER ================= */
 
-// router.post(
-//   "/member",
-//   validateAccessToken,
-//   validate(addMemberSchema, "body"),
-//   listController.updateListsMembers,
-// );
+router.post(
+  "/member",
+  validateAccessToken,
+  validate(addMemberSchema, "body"),
+  listController.updateListsMembers,
+);
 
-// router.delete(
-//   "/member/:listId/:memberId",
-//   validateAccessToken,
-//   validate(deleteMemberSchema, "params"),
-//   listController.deleteMember,
-// );
+router.delete(
+  "/member/:listId/:memberId",
+  validateAccessToken,
+  validate(addMemberSchema, "params"),
+  listController.deleteMember,
+);
 
 export default router;

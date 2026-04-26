@@ -1,4 +1,3 @@
-
 import { prisma } from "../../core/lib/prisma";
 import { Errors } from "../../core/errors/customeError.errors";
 import {
@@ -20,7 +19,7 @@ export const getListLibraryService = async ({
   id,
   tab = "Recent",
   sort = "Date",
-}: Params): Promise<libraryListResponseDTO[]> => {
+}: Params): Promise<libraryListResponseDTO> => {
   if (!id) {
     throw Errors.BAD_REQUEST({
       code: "INVALID_USER_ID",
@@ -45,10 +44,7 @@ export const getListLibraryService = async ({
 
   let where: any = {};
 
-  /* ================= TABS ================= */
-  if (tab === "Recent") {
-    where = baseAccess;
-  }
+  if (tab === "Recent") where = baseAccess;
 
   if (tab === "Favourites") {
     where = {
@@ -74,7 +70,6 @@ export const getListLibraryService = async ({
   if (tab === "Approval") {
     where = {
       OR: [
-        // 👤 invited user
         {
           members: {
             some: {
@@ -83,8 +78,6 @@ export const getListLibraryService = async ({
             },
           },
         },
-
-        // 👑 owner (inviter implicitly)
         {
           ownerId: id,
           members: {
@@ -99,7 +92,6 @@ export const getListLibraryService = async ({
 
   /* ================= SORT ================= */
   let orderBy: any = { createdAt: "desc" };
-
   if (sort === "Time") orderBy = { createdAt: "asc" };
   if (sort === "Priority") orderBy = { type: "asc" };
   if (sort === "Tags") orderBy = { title: "asc" };
@@ -137,8 +129,55 @@ export const getListLibraryService = async ({
     },
   });
 
+  /* ================= GLOBAL FLAGS ================= */
+
+  /* ================= GLOBAL PENDING (FIX) ================= */
+
+  const [pendingExists, pendingCount] = await Promise.all([
+    prisma.member.findFirst({
+      where: {
+        OR: [
+          // 👤 user has pending invite
+          {
+            userId: id,
+            status: CollabStatus.PENDING,
+          },
+
+          // 👑 user is owner and invited others
+          {
+            list: {
+              ownerId: id,
+            },
+            status: CollabStatus.PENDING,
+          },
+        ],
+      },
+      select: { id: true },
+    }),
+
+    prisma.member.count({
+      where: {
+        OR: [
+          {
+            userId: id,
+            status: CollabStatus.PENDING,
+          },
+          {
+            list: {
+              ownerId: id,
+            },
+            status: CollabStatus.PENDING,
+          },
+        ],
+      },
+    }),
+  ]);
+
+  const hasPending = !!pendingExists;
+
   /* ================= FORMAT ================= */
-  const formattedLists: libraryListResponseDTO[] = lists.map((list) => {
+
+  const formattedLists = lists.map((list) => {
     const isOwner = list.owner.id === id;
 
     return {
@@ -147,14 +186,13 @@ export const getListLibraryService = async ({
       createdAt: list.createdAt,
       isActive: list.isActive,
       isFavourite: list.isFavourite,
+
       owner: {
         id: list.owner.id,
         name: list.owner.name ?? "Unknown",
       },
 
       isOwner,
-
-      // ✅ FIX: only accepted members count as shared
       isShared: list.members.some((m) => m.status === CollabStatus.ACCEPTED),
 
       members: list.members.map((m) => ({
@@ -166,7 +204,13 @@ export const getListLibraryService = async ({
     };
   });
 
-  return formattedLists;
+  /* ================= RETURN ================= */
+
+  return {
+    hasPending,
+    pendingCount,
+    lists: formattedLists,
+  };
 };
 
 type DeleteListsParams = {

@@ -8,7 +8,7 @@ import {
   deleteListsResponse,
   deleteListsSchema,
   favouriteListsResponse,
-  libraryListResponseSchema,
+  libraryResponseSchema,
 } from "../../dto/library.dto";
 
 export const getListsLibrary = asyncHandler(
@@ -43,7 +43,7 @@ export const getListsLibrary = asyncHandler(
     });
     return sendSuccess(
       res,
-      libraryListResponseSchema.array(),
+      libraryResponseSchema,
       response,
       "User profile fetched successfully",
       200,

@@ -22,3 +22,60 @@ export const listSchema = baseListSchema.extend({
 export const ListResponseSchema = baseListSchema.extend({
   id: z.string().uuid(),
 });
+
+export const listIdParamSchema = z.object({
+  listId: z.string().uuid("Invalid list id"),
+});
+
+export const taskResponse = z.object({
+  title: z.string().min(1).trim(),
+  description: z.string().optional(),
+  dueDate: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val) return undefined;
+      return new Date(val).toISOString();
+    }),
+
+  priority: z.enum(["Low", "Medium", "High", "None"]),
+
+  isChecked: z.boolean(),
+  createdAt: z.date(),
+});
+
+export const listDetailResponseSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+
+  createdAt: z.date(),
+  isActive: z.boolean(),
+  isFavourite: z.boolean(),
+
+  owner: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    email: z.string().email(),
+    picture: z.string(),
+  }),
+
+  isOwner: z.boolean(),
+  isShared: z.boolean(),
+
+  members: z.array(
+    z.object({
+      id: z.string().uuid(),
+      name: z.string(),
+      email: z.string().email(),
+      status: z.enum(["PENDING", "ACCEPTED", "REJECTED"]),
+      picture: z.string(),
+    }),
+  ),
+
+  tasks: z.array(taskResponse),
+});
+
+export const addMemberSchema = z.object({
+  listId: z.string().uuid(),
+  memberId: z.string().uuid(),
+});

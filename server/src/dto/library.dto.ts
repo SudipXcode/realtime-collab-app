@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   libraryQuerySchema,
-  libraryListResponseSchema,
+  libraryResponseSchema,
   deleteListsSchema,
   deleteListsResponse,
   favouriteListsSchema,
@@ -10,22 +10,32 @@ import {
   approvalSchema,
 } from "../validation/libraryValidation";
 
+/* ================= TYPES ================= */
+
 export type libraryQueryRequestDTO = z.infer<typeof libraryQuerySchema>;
-export type libraryListResponseDTO = z.infer<typeof libraryListResponseSchema>;
+
+// 🔥 THIS IS YOUR MAIN RESPONSE TYPE NOW
+export type libraryListResponseDTO = z.infer<typeof libraryResponseSchema>;
+
 export type deleteListsSchemaDTO = z.infer<typeof deleteListsSchema>;
 export type deleteListsResponseDTO = z.infer<typeof deleteListsResponse>;
+
 export type favouriteListsDTO = z.infer<typeof favouriteListsSchema>;
 export type favouriteListsResponseDTO = z.infer<typeof favouriteListsResponse>;
+
 export type approvalSchemaResponseDTO = z.infer<typeof approvalSchemaResponse>;
 export type approvalSchemaDTO = z.infer<typeof approvalSchema>;
-/* ---------- RE-EXPORT SCHEMAS ---------- */
+
+/* ================= RE-EXPORT ================= */
+
 export {
   libraryQuerySchema,
-  libraryListResponseSchema,
+  libraryResponseSchema, // ✅ renamed export
   deleteListsSchema,
   deleteListsResponse,
   favouriteListsSchema,
   favouriteListsResponse,
   approvalSchemaResponse,
   approvalSchema,
+  
 };

@@ -6,16 +6,14 @@ export const libraryQuerySchema = z.object({
   sort: z.enum(["Date", "Time", "Tags", "Priority"]).optional(),
 });
 
-export const libraryListResponseSchema = z.object({
+export const libraryListItemSchema = z.object({
   id: z.string().uuid(),
-
   name: z.string(),
-
-  // ⚠️ important: API usually sends string, not Date object
   createdAt: z.coerce.date(),
 
   isActive: z.boolean(),
   isFavourite: z.boolean(),
+
   owner: z.object({
     id: z.string().uuid(),
     name: z.string(),
@@ -33,6 +31,15 @@ export const libraryListResponseSchema = z.object({
     }),
   ),
 });
+
+/* ================= FINAL RESPONSE ================= */
+
+export const libraryResponseSchema = z.object({
+  hasPending: z.boolean(),
+  pendingCount: z.number().int().min(0),
+  lists: z.array(libraryListItemSchema), // ✅ FIXED (no recursion)
+});
+
 export const deleteListsSchema = z.object({
   listId: z
     .array(z.string().uuid("Invalid list id"))
