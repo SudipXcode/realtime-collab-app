@@ -8,14 +8,14 @@ type LibraryTabsProps = {
   tabs: Tab[];
   activeTab: Tab;
   setActiveTab: React.Dispatch<React.SetStateAction<Tab>>;
-  isActiveApproval: boolean
+  hasPending: boolean
 };
 
 const LibraryTabs: React.FC<LibraryTabsProps> = ({
   tabs,
   setActiveTab,
   activeTab,
-  isActiveApproval
+  hasPending
 }): JSX.Element => {
 
 
@@ -33,7 +33,7 @@ const LibraryTabs: React.FC<LibraryTabsProps> = ({
         >
           {tab}
 
-          {tab === "Approval" && isActiveApproval && (
+          {tab === "Approval" && hasPending && (
             <div className="w-3 h-3 flex items-center justify-center bg-[#232323] absolute -right-1 top-1 rounded-full">
               <div className="w-1.5 h-1.5 rounded-full bg-[#FF8A33]" />
             </div>

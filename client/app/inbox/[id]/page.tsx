@@ -1,23 +1,39 @@
-// app/library/page.tsx
-
-import type { Metadata } from "next";
-import Sidebar from "@/components/layout/Sidebar";
+// import { getList } from "@/hooks/getList";
+import { getList } from "@/hooks/getList";
 import ListNav from "@/components/layout/ListNav";
+import Sidebar from "@/components/layout/Sidebar";
+import Mylist from "@/components/lists/view/Mylist";
+import Details from "@/components/lists/Details/Details";
 
 
-
-export const metadata: Metadata = {
-  title: "Library – TaskPilot",
-  description:
-    "Manage and organize all your tasks in one place.",
+type Props = {
+  params: Promise<{ id: string }>;
 };
 
-export default function Page() {
+export async function generateMetadata({ params }: Props) {
+  const { id } = await params;
+  const list = await getList(id);
+  const name = list?.name ?? "Inbox";
+
+  return {
+    title: `${name} – TaskPilot`,
+    description: `Manage tasks in the ${name} list inside TaskPilot.`,
+  };
+}
+
+export default async function Page({ params }: Props) {
+  const { id } = await params;
+  const list = await getList(id);
+
   return (
     <div className="w-full flex h-screen relative">
       <Sidebar />
       <ListNav />
-    
+      <Mylist initialData={list} />
+      <Details
+        list={list}
+        id={id}
+      />
     </div>
   );
 }

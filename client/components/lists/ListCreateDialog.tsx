@@ -38,7 +38,7 @@ const ListCreateDialog = ({ open, onOpenChange }) => {
     const dropdownRef = React.useRef(null)
     useOutsideClick(dropdownRef, () => setShowDropdown(false), showDropdown)
 
-    const debouncedQuery = useDebounce(query, 500)
+    const debouncedQuery = useDebounce(query, 600)
 
     const [results, setResults] = React.useState<Member[]>([])
     const [loading, setLoading] = React.useState(false)

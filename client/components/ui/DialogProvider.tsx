@@ -8,6 +8,10 @@ import UpgradePremiumDialog from "../profile/UpgradePremiumDialog"
 import { closePay } from "@/redux/slices/paySlice"
 import ListCreateDialog from "../lists/ListCreateDialog"
 import { closeList } from "@/redux/slices/ListSlice"
+import { closeCollab } from "@/redux/slices/CollabSlice"
+import { closeShare } from "@/redux/slices/ShareSlice"
+import ShareDialog from "./ShareDialog"
+import CollabDialog from "./CollabDialog"
 
 export default function DialogProvider(): JSX.Element {
     const dispatch = useDispatch<AppDispatch>()
@@ -19,8 +23,14 @@ export default function DialogProvider(): JSX.Element {
     const isPayOpen = useSelector<RootState, boolean>(
         (state) => state.pay.isPayOpen
     )
-        const isListOpen = useSelector<RootState, boolean>(
+    const isListOpen = useSelector<RootState, boolean>(
         (state) => state.list.isListOpen
+    )
+    const isShareOpen = useSelector<RootState, boolean>(
+        (state) => state.share.isShareOpen
+    )
+    const isCollabOpen = useSelector<RootState, boolean>(
+        (state) => state.collab.isCollabOpen
     )
     return (
         <>
@@ -39,10 +49,23 @@ export default function DialogProvider(): JSX.Element {
                     !open && dispatch(closePay())
                 }
             />}
-                {isListOpen && <ListCreateDialog
+            {isListOpen && <ListCreateDialog
                 open={isListOpen}
                 onOpenChange={(open: boolean) =>
                     !open && dispatch(closeList())
+                }
+            />}
+
+            {isShareOpen && <ShareDialog
+                open={isShareOpen}
+                onOpenChange={(open: boolean) =>
+                    !open && dispatch(closeShare())
+                }
+            />}
+            {isCollabOpen && <CollabDialog
+                open={isCollabOpen}
+                onOpenChange={(open: boolean) =>
+                    !open && dispatch(closeCollab())
                 }
             />}
         </>

@@ -5,12 +5,18 @@ import profileReducer from "./slices/profileSlice";
 import payReducer from "./slices/paySlice";
 import ListTile from "./slices/ListsTitlesSlice";
 import listReducer from "./slices/ListSlice";
+import taskDetailReducer from "./slices/TaskDetails";
+import ShareReducer from "./slices/ShareSlice";
+import CollabReducer from "./slices/CollabSlice";
 // Combine reducers
 const rootReducer = combineReducers({
   profile: profileReducer,
   pay: payReducer,
   listTitle: ListTile,
   list: listReducer,
+  task: taskDetailReducer,
+  share: ShareReducer,
+  collab: CollabReducer,
 });
 
 // Persist config

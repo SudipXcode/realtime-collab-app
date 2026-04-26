@@ -1,7 +1,7 @@
 
 "use client";
 
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Plus, Star } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import LibraryTabs from "./LibraryTabs";
 import Approvel from "./tabs/Approvel";
@@ -172,65 +172,65 @@ const Library: React.FC = () => {
 
   /* ================= TOGGLE FAVOURITE ================= */
 
-const handleFunctionFavourite = async (id: string) => {
-  if (!data) return;
+  const handleFunctionFavourite = async (id: string) => {
+    if (!data) return;
 
-  const prev = data;
+    const prev = data;
 
-  // ✅ optimistic update
-  setData((p) => {
-    if (!p?.data?.lists) return p;
+    // ✅ optimistic update
+    setData((p) => {
+      if (!p?.data?.lists) return p;
 
-    let updated = p.data.lists.map((item) =>
-      item.id === id
-        ? { ...item, isFavourite: !item.isFavourite }
-        : item
-    );
-
-    if (activeTab === "Favourites") {
-      updated = updated.filter((i) => i.isFavourite);
-    }
-
-    return {
-      ...p,
-      data: {
-        ...p.data,
-        lists: updated,
-      },
-    };
-  });
-
-  try {
-    const res = await toggleFavourite({
-      method: "PATCH",
-      body: { listId: id },
-    });
-
-    /* ❌ HANDLE API FAILURE (your main issue) */
-    if (!res?.success) {
-      setData(prev); // rollback UI
-
-      showToast(
-        res?.message || "You are not allowed to modify this list",
-        "warning"
+      let updated = p.data.lists.map((item) =>
+        item.id === id
+          ? { ...item, isFavourite: !item.isFavourite }
+          : item
       );
 
-      return; // ⛔ stop further execution
+      if (activeTab === "Favourites") {
+        updated = updated.filter((i) => i.isFavourite);
+      }
+
+      return {
+        ...p,
+        data: {
+          ...p.data,
+          lists: updated,
+        },
+      };
+    });
+
+    try {
+      const res = await toggleFavourite({
+        method: "PATCH",
+        body: { listId: id },
+      });
+
+      /* ❌ HANDLE API FAILURE (your main issue) */
+      if (!res?.success) {
+        setData(prev); // rollback UI
+
+        showToast(
+          res?.message || "You are not allowed to modify this list",
+          "warning"
+        );
+
+        return; // ⛔ stop further execution
+      }
+
+      /* ✅ SUCCESS */
+      setActiveTab(res.data.isFavourite ? "Favourites" : "Recent");
+
+      showToast("Favourite updated", "success");
+    } catch (err) {
+      setData(prev);
+
+      showToast(
+        getErrorMessage(err, "Favourite update failed"),
+        "error"
+      );
     }
-
-    /* ✅ SUCCESS */
-    setActiveTab(res.data.isFavourite ? "Favourites" : "Recent");
-
-    showToast("Favourite updated", "success");
-  } catch (err) {
-    setData(prev);
-
-    showToast(
-      getErrorMessage(err, "Favourite update failed"),
-      "error"
-    );
-  }
-};
+  };
 
   /* ================= APPROVAL ================= */
 
@@ -312,43 +312,49 @@ const handleFunctionFavourite = async (id: string) => {
   return (
     <div className="w-full flex flex-col py-6 h-screen">
       <PageHeading title="All Lists" />
+      <div className="w-full h-auto  mt-6 px-6">
+        {data?.data?.hasPending && <div className="w-full mb-6 flex items-center gap-2 h-auto px-4 py-2 rounded-3xl bg-[#4772FA]/10">
+          <Star size={14} fill="#4772FA" className="text-[#4772FA]" />
+          <p className="text-[13px]  text-[#4772FA]">You have  pending list on apprival. Visit the approval tab to know about the list collobration with members. </p>
+        </div>
+        }
+        <div className="w-full  flex items-center">
+          <LibraryTabs
+            tabs={tabs}
+            setActiveTab={setActiveTab}
+            activeTab={activeTab}
+            hasPending={data?.data?.hasPending}
+            pendingCount={data?.data?.pendingCount}
+          />
 
-      <div className="w-full mt-6 px-6 flex items-center">
-        <LibraryTabs
-          tabs={tabs}
-          setActiveTab={setActiveTab}
-          activeTab={activeTab}
-          isActiveApproval={data?.data?.hasApprovalData}
-        />
+          <div className="flex-1 flex justify-end gap-3">
+            <div ref={sortRef} className="relative">
+              <button
+                onClick={() => setOpenSort(!openSort)}
+                className="px-3 h-8 rounded-full flex items-center text-[13px] gap-1 text-[#a7a7a7] hover:text-white hover:bg-[#232323]"
+              >
+                Sort by {sort}
+                <ChevronDown size={16} />
+              </button>
 
-        <div className="flex-1 flex justify-end gap-3">
-          <div ref={sortRef} className="relative">
+              {openSort && (
+                <SortOptions
+                  setSort={setSort}
+                  sort={sort}
+                  close={() => setOpenSort(false)}
+                />
+              )}
+            </div>
+
             <button
-              onClick={() => setOpenSort(!openSort)}
+              onClick={() => dispatch(openList())}
               className="px-3 h-8 rounded-full flex items-center text-[13px] gap-1 text-[#a7a7a7] hover:text-white hover:bg-[#232323]"
             >
-              Sort by {sort}
-              <ChevronDown size={16} />
+              <Plus size={16} /> Create list
             </button>
-
-            {openSort && (
-              <SortOptions
-                setSort={setSort}
-                sort={sort}
-                close={() => setOpenSort(false)}
-              />
-            )}
           </div>
-
-          <button
-            onClick={() => dispatch(openList())}
-            className="px-3 h-8 rounded-full flex items-center text-[13px] gap-1 text-[#a7a7a7] hover:text-white hover:bg-[#232323]"
-          >
-            <Plus size={16} /> Create list
-          </button>
         </div>
       </div>
-
       {loading ? (
         <div className="px-8 h-full pt-6">
           {[140, 180, 120, 160, 200].map((w, i) => (
@@ -369,7 +375,7 @@ const handleFunctionFavourite = async (id: string) => {
         <div className="w-full flex items-center justify-center h-full">
           {activeTab === "Recent" && (
             <Recent
-              data={data?.data ?? []}
+              data={data?.data?.lists ?? []}
               selectedLists={selectedLists}
               setSelectedLists={setSelectedLists}
               handleDeleteList={handleDeleteList}
@@ -379,7 +385,7 @@ const handleFunctionFavourite = async (id: string) => {
 
           {activeTab === "Favourites" && (
             <Favourites
-              data={data?.data ?? []}
+              data={data?.data?.lists ?? []}
               selectedLists={selectedLists}
               setSelectedLists={setSelectedLists}
               handleDeleteList={handleDeleteList}
@@ -389,7 +395,7 @@ const handleFunctionFavourite = async (id: string) => {
 
           {activeTab === "Collaboration" && (
             <Collaboration
-              data={data?.data ?? []}
+              data={data?.data?.lists ?? []}
               selectedLists={selectedLists}
               setSelectedLists={setSelectedLists}
               handleDeleteList={handleDeleteList}
@@ -399,7 +405,7 @@ const handleFunctionFavourite = async (id: string) => {
 
           {activeTab === "Approval" && (
             <Approvel
-              data={data?.data ?? []}
+              data={data?.data?.lists ?? []}
               selectedLists={selectedLists}
               setSelectedLists={setSelectedLists}
               handleDeleteList={handleDeleteList}
