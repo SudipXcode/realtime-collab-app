@@ -38,32 +38,7 @@ export const getProfileService = async (
       },
     },
   });
-  // const user = await prisma.user.findUnique({
-  //   where: { id },
-  //   include: {
-  //     accounts: {
-  //       select: {
-  //         provider: true,
-  //       },
-  //     },
-  //     subscriptions: {
-  //       where: {
-  //         plan: SubscriptionPlan.PRO,
-  //         endDate: {
-  //           gt: new Date(), // ✅ only active subscriptions
-  //         },
-  //       },
-  //       select: {
-  //         plan: true,
-  //         endDate: true,
-  //       },
-  //       orderBy: {
-  //         endDate: "desc", // ✅ get the latest one
-  //       },
-  //       take: 1,
-  //     },
-  //   },
-  // });
+
 
   if (!user) {
     throw Errors.NOT_FOUND({
@@ -83,17 +58,7 @@ export const getProfileService = async (
     isPro: !!sub,
     proExpiresAt: sub?.endDate ?? null,
   };
-  // const activeSubscription = user.subscriptions[0] ?? null;
 
-  // return {
-  //   id: user.id,
-  //   email: user.email,
-  //   name: user.name,
-  //   picture: user.picture,
-  //   providers: user.accounts.map((acc) => acc.provider),
-  //   isPro: !!activeSubscription, // ✅ true if active PRO
-  //   proExpiresAt: activeSubscription?.endDate ?? null, // ✅ when it expires
-  // };
 };
 
 /* ================= UPDATE PROFILE ================= */

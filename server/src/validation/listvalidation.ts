@@ -28,6 +28,7 @@ export const listIdParamSchema = z.object({
 });
 
 export const taskResponse = z.object({
+  id: z.string().uuid(),
   title: z.string().min(1).trim(),
   description: z.string().optional(),
   dueDate: z

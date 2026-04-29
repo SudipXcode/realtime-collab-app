@@ -1,5 +1,6 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
+import slowDown from "express-slow-down";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
@@ -67,15 +68,22 @@ app.get("/health", (_, res) => {
     uptime: process.uptime(),
   });
 });
+
+const speedLimiter = slowDown({
+  windowMs: 15 * 60 * 1000, // 15 min
+  delayAfter: 5, // allow first 5 requests
+  delayMs: () => 500, // +500ms each extra request
+  maxDelayMs: 5000,
+});
 // 🔟 Rate limiting ONLY for API ✅
 // const limiter = rateLimit({
 //   windowMs: 15 * 60 * 1000,
-//   max: 100,
+//   max: 5,
 //   standardHeaders: true,
 //   legacyHeaders: false,
 // });
 
-// app.use("/api", limiter);
+app.use("/api", speedLimiter);
 app.use("/api", routes);
 app.use(notFound);
 app.use(globalErrorHandler);
