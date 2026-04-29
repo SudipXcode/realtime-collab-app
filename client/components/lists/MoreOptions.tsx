@@ -9,13 +9,13 @@ interface MoreOptionsProps {
     setListsOpen: (val: boolean) => void
     deleteoption?: boolean
     position?: string
-    setList?: (listId: string) => void
     setListId?: (listId: string) => void
+    setList?: (listId: string) => void
     ListTitle?: string
     isindex?: boolean
 }
 
-const MoreOptions: React.FC<MoreOptionsProps> = ({ isindex, setList, setListId, ListTitle, setListTitle, ref, close, taskOpen, setTaskOpen, deleteoption, position, priority, setPriority, handleDelete }) => {
+const MoreOptions: React.FC<MoreOptionsProps> = ({ setList, isindex, setListId, ListTitle, setListTitle, ref, close, taskOpen, setTaskOpen, deleteoption, position, priority, setPriority, handleDelete }) => {
     const containerRef = useRef<HTMLDivElement>(null)
 
 
@@ -27,7 +27,7 @@ const MoreOptions: React.FC<MoreOptionsProps> = ({ isindex, setList, setListId, 
     return (
         <div
             ref={ref}
-            className={`${position ? position : "top-8"}  w-46  flex flex-col gap-0.5 h-auto px-1 py-2 border border-[#2D2D2D] bg-[#242424] shadow-lg z-40 rounded-xl absolute -right-2`}  >
+            className={`${position ? position : "top-9"}  w-46  flex flex-col gap-0.5 h-auto px-1 py-2 border border-[#2D2D2D] bg-[#242424] shadow-lg z-40 rounded-xl absolute -right-2`}  >
             <div className='w-full px-2 h-auto flex flex-col gap-2'>
                 <p className='text-[12px] font-medium text-[#7C7C7C]'>Priority</p>
                 <div className='w-full pt-1 pb-3 h-auto flex items-center justify-between'>
@@ -70,8 +70,10 @@ const MoreOptions: React.FC<MoreOptionsProps> = ({ isindex, setList, setListId, 
 
             >
                 <button
-                    onClick={() => {
+                    onClick={(e) => {
+                        e.preventDefault()
                         if (!isindex)
+
                             setTaskOpen(!taskOpen)
                     }}
                     title='Move to list'

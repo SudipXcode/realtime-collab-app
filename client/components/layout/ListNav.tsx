@@ -7,6 +7,7 @@ import { openPay } from '@/redux/slices/paySlice'
 import { useDispatch, useSelector } from 'react-redux'
 import { openList } from '@/redux/slices/ListSlice'
 import { fetchLists } from '@/redux/slices/ListsTitlesSlice'
+import { setSelectedTask } from '@/redux/slices/TaskDetails'
 
 const ListNav: React.FC = (): JSX.Element => {
     const path = usePath()
@@ -51,11 +52,11 @@ const ListNav: React.FC = (): JSX.Element => {
                     </Link>
                     <Link href={"/today"}>
                         <button
-                            // onClick={() => {
+                            onClick={() =>
 
-                            //     dispatch(setSelectedInboxTask())
-                            //     dispatch(setSelectedTask())
-                            // }  }
+
+                                dispatch(setSelectedTask())
+                            }
                             title='Today' className={` ${path === "/today" ? "bg-[#2D2D2D]" : "hover:bg-[#232323] transition ease-in duration-150"} w-full  h-auto flex px-3 rounded-3xl py-2 gap-2 text-[13px] font-medium   items-center`}>
                             <CalendarCheck2 strokeWidth={2} size={17} />
                             Today
@@ -63,11 +64,11 @@ const ListNav: React.FC = (): JSX.Element => {
                     </Link>
                     <Link href={"/inbox"}>
                         <button
-                            //  onClick={() => {
+                            onClick={() =>
 
-                            //     dispatch(setSelectedInboxTask())
-                            //     dispatch(setSelectedTask())
-                            // }  }
+
+                                dispatch(setSelectedTask())
+                            }
                             title='Inbox' className={` ${path === "/inbox" ? "bg-[#2D2D2D]" : "hover:bg-[#232323] transition ease-in duration-150"} w-full  h-auto flex px-3 rounded-3xl py-2 gap-2 text-[13px] font-medium  items-center`}>
                             <span className='flex items-center gap-2'>
                                 <HardDrive strokeWidth={2} size={17} />
@@ -97,7 +98,8 @@ const ListNav: React.FC = (): JSX.Element => {
                         </div> : <div className='w-full flex flex-col gap-0.5 h-full'>
                             {data?.slice(0, 5).map((i) => (
                                 <Link key={i.id} href={`/inbox/${i.id}`}>
-                                    <button title={i.name} className={`${path === `/inbox/${i.id}` ? "bg-[#2D2D2D]" : "hover:bg-[#232323] transition ease-in duration-150"} w-full h-auto flex px-3 rounded-3xl py-1.5 gap-2 text-[13px] font-medium items-center`}>
+                                    <button onClick={() => dispatch(setSelectedTask())}
+                                        title={i.name} className={`${path === `/inbox/${i.id}` ? "bg-[#2D2D2D]" : "hover:bg-[#232323] transition ease-in duration-150"} w-full h-auto flex px-3 rounded-3xl py-1.5 gap-2 text-[13px] font-medium items-center`}>
                                         <span className="overflow-hidden text-ellipsis whitespace-nowrap w-full text-left">{i.name}</span>
                                     </button>
                                 </Link>

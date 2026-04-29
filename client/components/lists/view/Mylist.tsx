@@ -10,7 +10,7 @@ import { List } from "@/app/api/lists/[id]/route";
 import { showToast } from "@/lib/toast";
 import { useApi } from "@/hooks/useApi";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/hooks/useUser";
+
 
 
 /* ================= TYPE ================= */
@@ -21,14 +21,15 @@ type Props = {
 
 /* ================= HELPERS ================= */
 
-function getToastMessage(res: any, fallback: string) {
+function getToastMessage(res: unknown, fallback: string) {
   return res?.message || res?.data?.message || fallback;
 }
 
 /* ================= COMPONENT ================= */
 
 const Mylist = ({ initialData }: Props) => {
-  const { user } = useUser()
+
+
   const [list, setList] = useState<List | null>(initialData ?? null);
 
   const router = useRouter();
@@ -90,7 +91,7 @@ const Mylist = ({ initialData }: Props) => {
       );
 
       router.push("/library");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setList(prevData);
       showToast(err?.message || "Failed to delete list", "error");
     } finally {
@@ -123,7 +124,7 @@ const Mylist = ({ initialData }: Props) => {
       });
 
       showToast(getToastMessage(res, "Favourite updated"), "success");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setList(prevData);
       showToast(err?.message || "Failed to update favourite", "error");
     } finally {
@@ -155,7 +156,7 @@ const Mylist = ({ initialData }: Props) => {
         favouriteLoading={favouriteLoading}
       />
       <AddTask list={list} />
-      <AllTasks list={list} /> 
+      <AllTasks list={list} />
     </div>
   );
 };

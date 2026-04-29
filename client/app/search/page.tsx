@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Sidebar from "@/components/layout/Sidebar";
+import Search from "@/components/search/Search";
+import Details from "@/components/lists/Details/Details";
 
 
 
@@ -13,7 +15,8 @@ export default function Page() {
   return (
     <div className="w-full flex h-screen relative">
       <Sidebar />
-   
+      <Search />
+      <Details />
     </div>
   );
 }

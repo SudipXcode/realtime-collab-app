@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Sidebar from "@/components/layout/Sidebar";
 import ListNav from "@/components/layout/ListNav";
+import Details from "@/components/lists/Details/Details";
+import InboxTasks from "@/components/inbox/InboxTasks";
 
 
 
@@ -15,7 +17,11 @@ export default function Page() {
     <div className="w-full flex h-screen relative">
       <Sidebar />
       <ListNav />
-    
+      <InboxTasks />
+      <Details
+      // list={list}
+      // id={id}
+      />
     </div>
   );
 }

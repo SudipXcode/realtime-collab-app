@@ -32,7 +32,6 @@ export default async function Page({ params }: Props) {
       <Mylist initialData={list} />
       <Details
         list={list}
-        id={id}
       />
     </div>
   );

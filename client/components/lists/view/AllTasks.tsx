@@ -127,7 +127,6 @@
 
 // export default AllTasks;
 "use client";
-import { getSocket } from "@/lib/socket";
 import React, { useEffect } from "react";
 import {
     DndContext,
@@ -143,7 +142,7 @@ import Task from "./Task";
 
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/redux/store";
-import { getTasksThunk } from "@/redux/thunk/taskThunk";
+// import { getTasksThunk } from "@/redux/thunk/taskThunk";
 import { setTasks } from "@/redux/slices/TaskDetails";
 import { BookCheck } from "lucide-react";
 
@@ -162,16 +161,22 @@ const AllTasks = ({ list }) => {
     /* ✅ 1. SSR → Redux */
     useEffect(() => {
         if (list?.tasks?.length) {
-            dispatch(setTasks(list.tasks));
+            const normalized = list.tasks.map((t) => ({
+                ...t,
+                listId: t.listId ?? list.id, // ✅ inject listId
+                listName: list.name
+            }));
+
+            dispatch(setTasks(normalized));
         }
-    }, [dispatch, list?.tasks]);
+    }, [dispatch, list?.tasks, list?.id, list?.name]);
 
     /* ✅ 2. Sync latest from server */
-    useEffect(() => {
-        if (list?.id) {
-            dispatch(getTasksThunk(list.id));
-        }
-    }, [dispatch, list?.id]);
+    // useEffect(() => {
+    //     if (list?.id) {
+    //         dispatch(getTasksThunk(list.id));
+    //     }
+    // }, [dispatch, list?.id]);
 
     /* ✅ 3. DRAG HANDLER (Redux-based) */
     const handleDragEnd = (event: DragEndEvent) => {
@@ -210,7 +215,7 @@ const AllTasks = ({ list }) => {
         );
     }
 
-    if (loading) {
+    if (loading) { 
         return (
             <div className="px-8 h-full pt-6">
                 {[140, 180, 120, 160, 200].map((w, i) => (
@@ -243,7 +248,7 @@ const AllTasks = ({ list }) => {
             </div>
         );
     }
-   
+
     return (
         <div className="w-full pt-4 overflow-y-scroll scrollbar h-full">
             <DndContext

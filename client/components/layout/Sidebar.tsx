@@ -17,6 +17,8 @@ import ProfileOptions from "../ui/ProfileOptions";
 import { useOutsideClick } from "@/hooks/useOutSideclick";
 import { useUser } from "@/hooks/useUser";
 import Image from "next/image";
+import { setSelectedTask } from "@/redux/slices/TaskDetails";
+import { useDispatch } from "react-redux";
 
 const TASK_PATH_PATTERNS: RegExp[] = [
   /^\/inbox$/,
@@ -30,7 +32,7 @@ const TASK_PATH_PATTERNS: RegExp[] = [
 const Sidebar: React.FC = () => {
   const { user, isLoading } = useUser();
   const path = usePath();
-
+  const dispatch = useDispatch()
   const [openProfileOptions, setOpenProfileOptions] = useState(false);
   const profileOptionRef = useRef<HTMLDivElement>(null);
 
@@ -103,7 +105,7 @@ const Sidebar: React.FC = () => {
         <Link href="/search">
           <button
             title="Search"
-            // onClick={() => dispatch(setSelectedTask())}
+            onClick={() => dispatch(setSelectedTask())}
             className={`${path === "/search"
               ? "text-white"
               : "text-[#7C7C7C] transition ease-linear duration-150 hover:text-white"
@@ -117,7 +119,7 @@ const Sidebar: React.FC = () => {
       {/* Bottom Nav */}
       <div className="w-full flex flex-col items-center py-6 gap-5">
         <button
-        
+
           title="Sync"
           className="text-[#7C7C7C] transition ease-linear duration-150 hover:text-white"
         >

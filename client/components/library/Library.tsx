@@ -139,11 +139,16 @@ const Library: React.FC = () => {
 
     // ✅ instant UI update
     setData((p) => {
-      if (!p?.data) return p;
+      if (!p?.data?.lists) return p;
 
       return {
         ...p,
-        data: p.data.filter((item) => !ids.includes(item.id)),
+        data: {
+          ...p.data,
+          lists: p.data.lists.filter(
+            (item) => !ids.includes(item.id)
+          ),
+        },
       };
     });
 

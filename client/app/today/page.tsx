@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Sidebar from "@/components/layout/Sidebar";
 import ListNav from "@/components/layout/ListNav";
-
+import Details from "@/components/lists/Details/Details";
+import TodayTasks from '@/components/today/TodayTasks'
 
 
 export const metadata: Metadata = {
@@ -15,7 +16,8 @@ export default function Page() {
     <div className="w-full flex h-screen relative">
       <Sidebar />
       <ListNav />
-    
+      <TodayTasks />
+      <Details />
     </div>
   );
 }

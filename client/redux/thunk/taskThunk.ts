@@ -1,5 +1,3 @@
-
-
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { apiCall } from "@/lib/apiCall";
 import {
@@ -7,213 +5,245 @@ import {
   removeTask,
   replaceTask,
   updateTaskLocal,
-  setUpdating,
-  removeUpdating,
-  FullTaskFields,
 } from "../slices/TaskDetails";
 
 /* ================= TYPES ================= */
 
-interface CreateTaskInput {
+export interface Task {
+  id: string;
   title: string;
+  dueDate: string | null;
+  createdAt: string;
+  priority: "Low" | "Medium" | "High" | "None";
+  isChecked: boolean;
   listId: string;
-  emoji?: string | null;
-  dueDate: string;
-  priority: string;
-  attachment?: File | null;
 }
 
 interface ApiTask {
   id: string;
-  listId: string;
   title: string;
-  priority: string;
   dueDate: string;
+  createdAt: string;
+  priority: string;
   isChecked: boolean;
-  description: string | null;
-  attachment: unknown;
-  attagementId?: string;
-  listName?: string;
+  listId?: string;
 }
 
-/* ================= TEMP ID ================= */
+interface CreateTaskInput {
+  title: string;
+  listId: string;
+  dueDate: string;
+  priority: Task["priority"];
+  emoji?: string | null; // ✅ ONLY HERE
+}
 
-let tempIdCounter = -1;
-const getTempId = () => tempIdCounter--;
+/* ================= MAPPER ================= */
 
-/* ================= MAP ================= */
-
-const mapTask = (task: ApiTask): FullTaskFields => ({
+const mapTask = (task: ApiTask, listId?: string): Task => ({
   id: task.id,
   title: task.title,
-  isChecked: task.isChecked,
-  dueDate: task.dueDate,
-  priority: task.priority.charAt(0) + task.priority.slice(1).toLowerCase(),
-  listId: task.listId,
-  attachment: task.attachment ?? [],
-  attagementId: task.attagementId ?? "",
-  desc: task.description ?? "",
-  collab: [],
-  listName: task.listName ?? "",
+  dueDate: task.dueDate ?? null,
+  createdAt: task.createdAt,
+  priority: (task.priority || "None") as Task["priority"],
+  isChecked: task.isChecked ?? false,
+  listId: task.listId ?? listId!,
 });
 
-/* ================= DEBOUNCE STORAGE ================= */
+/* ================= CREATE ================= */
 
-const timers: Record<string, NodeJS.Timeout> = {};
-const pending: Record<string, Partial<FullTaskFields>> = {};
-
-/* ================= UPDATE TASK ================= */
-export const updateTaskDebouncedThunk =
-  (data: Partial<FullTaskFields> & { id: string }) =>
-  async (dispatch: any) => {
-    const { id, ...rest } = data;
-
-    pending[id] = { ...pending[id], ...rest };
-
-    dispatch(updateTaskLocal(data));
-    dispatch(setUpdating(id));
-
-    if (timers[id]) clearTimeout(timers[id]);
-
-    timers[id] = setTimeout(async () => {
-      try {
-        const payload: any = { ...pending[id] };
-
-        // remove empty values
-        Object.keys(payload).forEach((key) => {
-          if (payload[key] === undefined || payload[key] === null) {
-            delete payload[key];
-          }
-        });
-
-        if (!Object.keys(payload).length) {
-          dispatch(removeUpdating(id));
-          delete pending[id];
-          delete timers[id];
-          return;
-        }
-
-        /* ✅ ALWAYS use FormData (same as create) */
-        const formData = new FormData();
-
-        Object.keys(payload).forEach((key) => {
-          if (key === "attachment" && payload[key] instanceof File) {
-            formData.append("attachment", payload[key]);
-          } else {
-            formData.append(key, String(payload[key]));
-          }
-        });
-
-        const res = await apiCall<{ data: ApiTask }>(
-          `/api/lists/task/${id}`,
-          {
-            method: "PATCH",
-            body: formData,
-          }
-        );
-
-        dispatch(updateTaskLocal(mapTask(res.data)));
-
-        delete pending[id];
-        delete timers[id];
-      } catch (err) {
-        console.error("Update failed:", err);
-      } finally {
-        dispatch(removeUpdating(id));
-      }
-    }, 600);
-  };
-
-/* ================= CREATE TASK ================= */
 export const createTaskThunk = createAsyncThunk(
   "tasks/create",
   async (data: CreateTaskInput, { dispatch, rejectWithValue }) => {
-    const tempId = getTempId();
+    const tempId = Date.now().toString();
 
-    const optimistic: FullTaskFields = {
-      id: tempId.toString(),
-      title: data.title,
-      isChecked: false,
+    /* 🔥 merge emoji into title */
+    const finalTitle = data.emoji ? `${data.emoji} ${data.title}` : data.title;
+
+    const optimistic: Task = {
+      id: tempId,
+      title: finalTitle,
       dueDate: data.dueDate,
+      createdAt: new Date().toISOString(),
       priority: data.priority,
+      isChecked: false,
       listId: data.listId,
-      attachment: null,
-      desc: "",
-      collab: [],
-      attagementId: "",
-      listName: "",
     };
 
     dispatch(addTask(optimistic));
 
     try {
-      const formData = new FormData();
-      formData.append("title", data.title);
-      formData.append("listId", data.listId);
-      formData.append("emoji", data.emoji || "");
-      formData.append("dueDate", data.dueDate);
-      formData.append("priority", data.priority);
-
-      if (data.attachment) {
-        formData.append("attachment", data.attachment);
-      }
-
-      const res = await apiCall<{ data: ApiTask }>("/api/lists/task", {
+      const res = await apiCall<{ data: ApiTask }>("/api/task", {
         method: "POST",
-        body: formData,
+        body: JSON.stringify({
+          title: finalTitle, // ✅ already merged
+          listId: data.listId,
+          dueDate: data.dueDate,
+          priority: data.priority,
+        }),
       });
-
-      const realTask = mapTask(res.data);
 
       dispatch(
         replaceTask({
-          tempId: tempId.toString(),
-          realTask,
-        })
+          tempId,
+          realTask: mapTask(res.data),
+        }),
       );
 
-      return realTask;
-    } catch (err: any) {
-      dispatch(removeTask(tempId.toString()));
+      return res.data;
+    } catch (err: unknown) {
+      dispatch(removeTask(tempId));
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
+export const moveTaskThunk = createAsyncThunk(
+  "tasks/move",
+  async (
+    { taskId, newListId }: { taskId: string; newListId: string },
+    { dispatch, getState, rejectWithValue },
+  ) => {
+    const state = getState() as RootState;
 
-/* ================= GET TASKS ================= */
+    const existingTask = state.task.tasks.find((t: Task) => t.id === taskId);
 
-export const getTasksThunk = createAsyncThunk(
-  "tasks/get",
-  async (listId: string, { rejectWithValue }) => {
+    if (!existingTask) return;
+
+    if (existingTask.listId === newListId) return;
+
+    const oldListId = existingTask.listId;
+
     try {
-      const res = await apiCall<{ data: ApiTask[] }>(
-        `/api/lists/task/${listId}`
+      /* ================= OPTIMISTIC ================= */
+      dispatch(
+        updateTaskLocal({
+          id: taskId,
+          listId: newListId,
+        }),
       );
 
-      return res.data.map(mapTask);
-    } catch (err: any) {
+      /* ================= API ================= */
+      const res = await apiCall<{ data: ApiTask }>(`/api/task/${taskId}/move`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json", // 🔥 REQUIRED
+        },
+        body: JSON.stringify({ listId: newListId }),
+      });
+
+      /* ================= HARD SYNC ================= */
+      // 🔥 IMPORTANT: always trust backend
+      dispatch(
+        updateTaskLocal({
+          id: res.data.id,
+          title: res.data.title,
+          description: res.data.description ?? undefined,
+          dueDate: res.data.dueDate ?? null,
+          priority: res.data.priority,
+          isChecked: res.data.isChecked,
+          listId: res.data.listId,
+        }),
+      );
+
+      return res.data;
+    } catch (err: unknown) {
+      /* ================= ROLLBACK ================= */
+      dispatch(
+        updateTaskLocal({
+          id: taskId,
+          listId: oldListId,
+        }),
+      );
+
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
-/* ================= DELETE TASK ================= */
+/* ================= DELETE ================= */
 
 export const deleteTaskThunk = createAsyncThunk(
   "tasks/delete",
   async (
     { taskId, listId }: { taskId: string; listId: string },
-    { rejectWithValue }
+    { rejectWithValue },
   ) => {
     try {
-      await apiCall(`/api/lists/${listId}/task/${taskId}`, {
+      await apiCall(`/api/task/${listId}/${taskId}`, {
         method: "DELETE",
       });
 
       return { taskId };
-    } catch (err: any) {
+    } catch (err: unknown) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
+
+/* ================= DEBOUNCE UPDATE ================= */
+
+const timers: Record<string, NodeJS.Timeout> = {};
+const pending: Record<string, Partial<Task>> = {};
+
+export const updateTaskDebouncedThunk =
+  (data: Partial<Task> & { id: string }) =>
+  async (dispatch: unknown, getState: unknown) => {
+    const { id, ...rest } = data;
+
+    const state = getState();
+    const existingTask = state.task.tasks.find((t: Task) => t.id === id);
+
+    if (!existingTask) return;
+
+    /* ✅ merge pending updates */
+    pending[id] = {
+      ...pending[id],
+      ...rest,
+    };
+
+    /* ✅ optimistic UI update */
+    dispatch(updateTaskLocal(data));
+
+    if (timers[id]) clearTimeout(timers[id]);
+
+    timers[id] = setTimeout(async () => {
+      try {
+        const raw = pending[id];
+
+        if (!raw) return; // ✅ FIX CRASH
+
+        const payload: unknown = {
+          listId: existingTask.listId, // required
+        };
+
+        if (raw.title !== undefined) payload.title = raw.title;
+
+        if (raw.description !== undefined)
+          payload.description = raw.description === "" ? null : raw.description;
+
+        if (raw.dueDate !== undefined) payload.dueDate = raw.dueDate;
+
+        if (raw.priority !== undefined) payload.priority = raw.priority;
+
+        if (raw.isChecked !== undefined) payload.isChecked = raw.isChecked;
+
+        /* ❗ EXTRA SAFETY */
+        if (Object.keys(payload).length === 1) {
+          // only listId → nothing changed
+          return;
+        }
+
+        const res = await apiCall<{ data: ApiTask }>(`/api/task/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
+
+        dispatch(updateTaskLocal(mapTask(res.data, existingTask.listId)));
+
+        delete pending[id];
+        delete timers[id];
+      } catch (err) {
+        console.error("Update failed:", err);
+      }
+    }, 600);
+  };
