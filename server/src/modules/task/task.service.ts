@@ -1,13 +1,88 @@
 import { prisma } from "../../core/lib/prisma";
 import { Errors } from "../../core/errors/customeError.errors";
-import { Priority, CollabStatus, Task as PrismaTask } from "@prisma/client";
+import { Priority, CollabStatus, Task as PrismaTask, SystemListKey } from "@prisma/client";
 import {
   taskMoveSchemaDTO,
   taskRequestDTO,
   taskResponseDTO,
   taskUpdateScheamDTO,
 } from "../../dto/task.dto";
+import { listDetailResponseDTO } from "../../dto/lists.dto";
 
+export const createInboxTaskService = async (
+  userId: string,
+  data: taskRequestDTO,
+): Promise<taskResponseDTO> => {
+  if (!userId) {
+    throw Errors.BAD_REQUEST({
+      code: "INVALID_USER_ID",
+      message: "Invalid user id",
+    });
+  }
+
+  const { dueDate, priority, title } = data;
+
+  return await prisma.$transaction(async (tx) => {
+    /* ================= FIND / CREATE INBOX ================= */
+
+    let inbox = await tx.list.findUnique({
+      where: {
+        ownerId_systemKey: {
+          ownerId: userId,
+          systemKey: SystemListKey.INBOX,
+        },
+      },
+    });
+
+    if (!inbox) {
+      inbox = await tx.list.create({
+        data: {
+          title: "Inbox",
+          ownerId: userId,
+          isSystem: true,
+          systemKey: SystemListKey.INBOX,
+        },
+      });
+    }
+
+    if (!inbox.isActive) {
+      throw Errors.NOT_FOUND({
+        code: "INBOX_NOT_FOUND",
+        message: "Inbox not available",
+      });
+    }
+
+    /* ================= CREATE TASK ================= */
+
+    const task = await tx.task.create({
+      data: {
+        title,
+        listId: inbox.id,
+        priority: (priority?.toUpperCase() as Priority) || "NONE",
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+        isChecked: false,
+      },
+    });
+
+    /* ================= RESPONSE ================= */
+
+    return {
+      id: task.id,
+      title: task.title,
+      description: task.description ?? undefined,
+      dueDate: task.dueDate?.toISOString(),
+      priority: (task.priority.charAt(0) +
+        task.priority.slice(1).toLowerCase()) as
+        | "Low"
+        | "Medium"
+        | "High"
+        | "None",
+      isChecked: task.isChecked,
+      createdAt: task.createdAt,
+      listId: task.listId,
+    };
+  });
+};
 export const createTaskService = async (
   userId: string,
   data: taskRequestDTO,
@@ -303,4 +378,116 @@ export const deleteTaskService = async (
       id: taskId,
     },
   });
+};
+
+export const todayTaskService = async (
+  userId: string,
+): Promise<listDetailResponseDTO[]> => {
+  if (!userId) {
+    throw Errors.BAD_REQUEST({
+      code: "INVALID_USER_ID",
+      message: "Invalid user id",
+    });
+  }
+
+  const now = new Date();
+  const next24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+  const lists = await prisma.list.findMany({
+    where: {
+      OR: [
+        { ownerId: userId },
+        {
+          members: {
+            some: {
+              userId,
+              status: CollabStatus.ACCEPTED,
+            },
+          },
+        },
+      ],
+      tasks: {
+        some: {
+          dueDate: {
+            gte: now,
+            lte: next24Hours,
+          },
+        },
+      },
+    },
+
+    include: {
+      owner: true,
+
+      members: {
+        include: {
+          user: true,
+        },
+      },
+
+      tasks: {
+        where: {
+          dueDate: {
+            gte: now,
+            lte: next24Hours,
+          },
+        },
+        orderBy: {
+          dueDate: "asc",
+        },
+      },
+    },
+  });
+
+  return lists
+    .map((list) => {
+      const isOwner = list.ownerId === userId;
+
+      const visibleTasks = list.tasks;
+
+      if (!visibleTasks.length) return null;
+
+      return {
+        id: list.id,
+        name: list.title,
+        createdAt: list.createdAt,
+        isActive: list.isActive,
+        isFavourite: list.isFavourite,
+
+        owner: {
+          id: list.owner.id,
+          name: list.owner.name ?? "Unknown",
+          email: list.owner.email,
+          picture: list.owner.picture ?? "Unknown",
+        },
+
+        isOwner,
+
+        isShared: list.members.some((m) => m.status === CollabStatus.ACCEPTED),
+
+        members: list.members.map((m) => ({
+          id: m.user.id,
+          name: m.user.name ?? "Unknown",
+          email: m.user.email,
+          status: m.status,
+          picture: m.user.picture ?? "Unknown",
+        })),
+
+        tasks: visibleTasks.map((task) => ({
+          id: task.id,
+          title: task.title,
+          description: task.description ?? undefined,
+          dueDate: task.dueDate ? task.dueDate.toISOString() : undefined,
+          priority: (task.priority.charAt(0) +
+            task.priority.slice(1).toLowerCase()) as
+            | "Low"
+            | "Medium"
+            | "High"
+            | "None",
+          isChecked: task.isChecked,
+          createdAt: task.createdAt,
+        })),
+      };
+    })
+    .filter(Boolean) as listDetailResponseDTO[];
 };

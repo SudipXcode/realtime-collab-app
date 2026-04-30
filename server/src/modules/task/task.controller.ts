@@ -9,6 +9,7 @@ import {
   taskUpdateSchema,
 } from "../../dto/task.dto";
 import z from "zod";
+import { listDetailResponseSchema } from "../../validation/listvalidation";
 const EmptyResponseSchema = z.object({});
 
 export const postTask: RequestHandler = asyncHandler(
@@ -29,6 +30,7 @@ export const postTask: RequestHandler = asyncHandler(
         message: "Invalid user id in token",
       });
     }
+
     const response = await taskService.createTaskService(id, req.body);
 
     return sendSuccess(
@@ -153,7 +155,71 @@ export const deleteTask: RequestHandler = asyncHandler(
       EmptyResponseSchema,
       {},
       "Task deleted successfully",
-      200
+      200,
     );
-  }
+  },
+);
+
+export const todayTask: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const authPayload = req.auth;
+
+    if (!authPayload) {
+      throw Errors.UNAUTHORIZED({
+        code: "AUTH_REQUIRED",
+        message: "Authentication required",
+      });
+    }
+
+    const userId = authPayload.id as string;
+
+    if (!userId) {
+      throw Errors.BAD_REQUEST({
+        code: "INVALID_USER_ID",
+        message: "Invalid user id in token",
+      });
+    }
+
+    const result = await taskService.todayTaskService(userId);
+
+    return sendSuccess(
+      res,
+      listDetailResponseSchema.array(),
+      result,
+      "Today task fetch successfully",
+      200,
+    );
+  },
+);
+
+
+export const postInboxTask: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const authPayload = req.auth;
+
+    if (!authPayload) {
+      throw Errors.UNAUTHORIZED({
+        code: "AUTH_REQUIRED",
+        message: "Authentication required",
+      });
+    }
+
+    const id = authPayload.id as string;
+    if (!id) {
+      throw Errors.BAD_REQUEST({
+        code: "INVALID_USER_ID",
+        message: "Invalid user id in token",
+      });
+    }
+
+    const response = await taskService.createInboxTaskService(id, req.body);
+
+    return sendSuccess(
+      res,
+      taskResponseSchema,
+      response,
+      "Inbox task posted successfully",
+      201,
+    );
+  },
 );

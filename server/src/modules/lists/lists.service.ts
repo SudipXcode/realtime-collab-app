@@ -448,6 +448,14 @@ export const createListService = async (
   }
 
   const { name, type, color, emoji, memberId } = data;
+  const normalizedName = name.trim().toLowerCase();
+
+  if (normalizedName === "inbox") {
+    throw Errors.BAD_REQUEST({
+      code: "RESERVED_LIST_NAME",
+      message: `"Inbox" is a reserved system list name`,
+    });
+  }
 
   return await prisma.$transaction(async (tx) => {
     const subscription = await tx.subscription.findUnique({
@@ -504,6 +512,52 @@ export const createListService = async (
 /* =========================================================
    GET LISTS (optimized, safe)
 ========================================================= */
+// export const getListService = async (
+//   userId: string,
+// ): Promise<ListResponseDTO[]> => {
+//   if (!userId) {
+//     throw Errors.BAD_REQUEST({
+//       code: "INVALID_USER_ID",
+//       message: "Invalid user id",
+//     });
+//   }
+
+//   const lists = await prisma.list.findMany({
+//     where: {
+//       OR: [
+//         { ownerId: userId },
+//         {
+//           members: {
+//             some: {
+//               userId,
+//               status: CollabStatus.ACCEPTED,
+//             },
+//           },
+//         },
+//       ],
+//     },
+//     select: {
+//       id: true,
+//       title: true,
+//       type: true,
+//       color: true,
+//       members: {
+//         select: { userId: true },
+//       },
+//     },
+//     orderBy: { createdAt: "desc" },
+//   });
+
+//   return lists.map((list) => ({
+//     id: list.id,
+//     name: list.title,
+//     type: (list.type ?? "PERSONAL").toLowerCase() as ListResponseDTO["type"],
+//     color: list.color ?? "#4772FA",
+//     ...(list.members?.[0]?.userId && {
+//       memberId: list.members[0].userId,
+//     }),
+//   }));
+// };
 export const getListService = async (
   userId: string,
 ): Promise<ListResponseDTO[]> => {
@@ -527,6 +581,9 @@ export const getListService = async (
           },
         },
       ],
+      title: {
+        not: "Inbox",
+      },
     },
     select: {
       id: true,
@@ -550,7 +607,6 @@ export const getListService = async (
     }),
   }));
 };
-
 /* =========================================================
    LIST DETAILS (safe, no change needed)
 ========================================================= */

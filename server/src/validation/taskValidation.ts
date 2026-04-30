@@ -13,6 +13,18 @@ export const taskRequestSchema = z.object({
   priority: z.enum(["Low", "Medium", "High", "None"]),
 });
 
+export const inboxTaskRequestSchema = z.object({
+  title: z.string().min(1).trim(),
+  dueDate: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val) return undefined;
+      return new Date(val).toISOString();
+    }),
+  priority: z.enum(["Low", "Medium", "High", "None"]),
+});
+
 export const taskResponseSchema = z.object({
   id: z.string().uuid(),
 

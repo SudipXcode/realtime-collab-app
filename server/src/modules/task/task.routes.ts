@@ -6,6 +6,7 @@ import {
 } from "../../core/middlewares/reqValidate.middleware";
 
 import {
+  inboxTaskRequestSchema,
   taskDeleteParam,
   taskMoveSchema,
   taskRequestSchema,
@@ -22,6 +23,14 @@ router.post(
   taskController.postTask,
 );
 
+router.post(
+  "/inbox",
+  validateAccessToken,
+  validate(inboxTaskRequestSchema, "body"),
+  taskController.postInboxTask,
+);
+
+
 router.patch(
   "/:id",
   validateAccessToken,
@@ -30,7 +39,12 @@ router.patch(
   taskController.updateTask,
 );
 
-router.delete("/:listId/:id", validateAccessToken,  validate(taskDeleteParam, "params"), taskController.deleteTask);
+router.delete(
+  "/:listId/:id",
+  validateAccessToken,
+  validate(taskDeleteParam, "params"),
+  taskController.deleteTask,
+);
 
 router.patch(
   "/:id/move",
@@ -39,4 +53,5 @@ router.patch(
   validate(taskMoveSchema, "body"),
   taskController.moveTask,
 );
+router.get("/today", validateAccessToken, taskController.todayTask);
 export default router;

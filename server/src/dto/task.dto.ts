@@ -6,6 +6,7 @@ import {
   taskUpdateParam,
   taskMoveSchema,
   taskDeleteParam,
+  inboxTaskRequestSchema,
 } from "../validation/taskValidation";
 
 export type taskRequestDTO = z.infer<typeof taskRequestSchema>;
@@ -14,6 +15,7 @@ export type taskUpdateParamDTO = z.infer<typeof taskUpdateParam>;
 export type taskUpdateScheamDTO = z.infer<typeof taskUpdateSchema>;
 export type taskMoveSchemaDTO = z.infer<typeof taskMoveSchema>;
 export type taskDeleteParamDTO = z.infer<typeof taskDeleteParam>;
+export type inboxTaskRequestDTO = z.infer<typeof inboxTaskRequestSchema>;
 /* ---------- RE-EXPORT SCHEMAS ---------- */
 export {
   taskRequestSchema,
@@ -22,4 +24,5 @@ export {
   taskUpdateSchema,
   taskMoveSchema,
   taskDeleteParam,
+  inboxTaskRequestSchema,
 };
