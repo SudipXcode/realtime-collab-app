@@ -192,6 +192,37 @@ export const todayTask: RequestHandler = asyncHandler(
   },
 );
 
+export const inboxTask: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const authPayload = req.auth;
+
+    if (!authPayload) {
+      throw Errors.UNAUTHORIZED({
+        code: "AUTH_REQUIRED",
+        message: "Authentication required",
+      });
+    }
+
+    const userId = authPayload.id as string;
+
+    if (!userId) {
+      throw Errors.BAD_REQUEST({
+        code: "INVALID_USER_ID",
+        message: "Invalid user id in token",
+      });
+    }
+
+    const result = await taskService.inboxTaskService(userId);
+
+    return sendSuccess(
+      res,
+      listDetailResponseSchema.array(),
+      result,
+      "Today task fetch successfully",
+      200,
+    );
+  },
+);
 
 export const postInboxTask: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {

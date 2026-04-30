@@ -30,7 +30,6 @@ router.post(
   taskController.postInboxTask,
 );
 
-
 router.patch(
   "/:id",
   validateAccessToken,
@@ -54,4 +53,5 @@ router.patch(
   taskController.moveTask,
 );
 router.get("/today", validateAccessToken, taskController.todayTask);
+router.get("/inbox", validateAccessToken, taskController.inboxTask);
 export default router;

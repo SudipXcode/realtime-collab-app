@@ -491,3 +491,102 @@ export const todayTaskService = async (
     })
     .filter(Boolean) as listDetailResponseDTO[];
 };
+
+
+export const inboxTaskService = async (
+  userId: string,
+): Promise<listDetailResponseDTO[]> => {
+  if (!userId) {
+    throw Errors.BAD_REQUEST({
+      code: "INVALID_USER_ID",
+      message: "Invalid user id",
+    });
+  }
+
+  const lists = await prisma.list.findMany({
+    where: {
+      title: "Inbox",
+      OR: [
+        { ownerId: userId },
+        {
+          members: {
+            some: {
+              userId,
+              status: CollabStatus.ACCEPTED,
+            },
+          },
+        },
+      ],
+    },
+
+    include: {
+      owner: true,
+
+      members: {
+        include: {
+          user: true,
+        },
+      },
+
+      tasks: {
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+    },
+  });
+
+  return lists
+    .map((list) => {
+      const isOwner = list.ownerId === userId;
+
+      const visibleTasks = list.tasks;
+
+      if (!visibleTasks.length) return null;
+
+      return {
+        id: list.id,
+        name: list.title,
+        createdAt: list.createdAt,
+        isActive: list.isActive,
+        isFavourite: list.isFavourite,
+
+        owner: {
+          id: list.owner.id,
+          name: list.owner.name ?? "Unknown",
+          email: list.owner.email,
+          picture: list.owner.picture ?? "Unknown",
+        },
+
+        isOwner,
+
+        isShared: list.members.some(
+          (m) => m.status === CollabStatus.ACCEPTED
+        ),
+
+        members: list.members.map((m) => ({
+          id: m.user.id,
+          name: m.user.name ?? "Unknown",
+          email: m.user.email,
+          status: m.status,
+          picture: m.user.picture ?? "Unknown",
+        })),
+
+        tasks: visibleTasks.map((task) => ({
+          id: task.id,
+          title: task.title,
+          description: task.description ?? undefined,
+          dueDate: task.dueDate
+            ? task.dueDate.toISOString()
+            : undefined,
+          priority: (
+            task.priority.charAt(0) +
+            task.priority.slice(1).toLowerCase()
+          ) as "Low" | "Medium" | "High" | "None",
+          isChecked: task.isChecked,
+          createdAt: task.createdAt,
+        })),
+      };
+    })
+    .filter(Boolean) as listDetailResponseDTO[];
+};
