@@ -13,7 +13,6 @@ const app = express();
 
 // 1️⃣ Trust proxy
 app.set("trust proxy", 1);
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [];
 // 2️⃣ Security
 app.use(
   helmet({
@@ -50,13 +49,14 @@ app.use(
     origin: (origin, callback) => {
       const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [];
 
+      // allow mobile apps / postman
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      return callback(new Error("Not allowed by CORS"), false);
+      return callback(null, false); // ❌ DO NOT THROW ERROR
     },
     credentials: true,
   })
