@@ -111,7 +111,7 @@ import { useDispatch } from 'react-redux'
 import { showToast } from '@/lib/toast'
 import { setSelectedTask } from '@/redux/slices/TaskDetails'
 
-const Footer = ({ selectedTask, list }) => {
+const Footer = ({ selectedTask }) => {
   const dispatch = useDispatch()
 
   const [openTaskSelect, setOpenListSelect] = React.useState(false)
@@ -129,7 +129,7 @@ const Footer = ({ selectedTask, list }) => {
   /* ================= DELETE TASK ================= */
 
   const handleDelete = async () => {
-    if (!selectedTask?.id || !list?.id) return
+    if (!selectedTask?.id || !selectedTask?.listId) return
 
     setLoadingDelete(true)
 
@@ -137,7 +137,7 @@ const Footer = ({ selectedTask, list }) => {
       const res = await dispatch(
         deleteTaskThunk({
           taskId: selectedTask.id,
-          listId: list.id,
+          listId: selectedTask?.listId,
         })
       );
 

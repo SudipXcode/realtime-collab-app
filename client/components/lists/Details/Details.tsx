@@ -7,16 +7,16 @@ import Heading from './Heading';
 import Body from './Body';
 import Footer from './Footer';
 
-const Details = ({ list }) => {
+const Details = () => {
     const selectedTask = useSelector((state) => state.task.selectedTask);
 
     return (
         <div className="w-90 flex-none border-l  border-[#2D2D2D] h-full ">
             {selectedTask ?
                 <div className="w-full h-full   flex flex-col justify-between items-center ">
-                    <Heading list={list} selectedTask={selectedTask} />
+                    <Heading selectedTask={selectedTask} />
                     <Body selectedTask={selectedTask} />
-                    <Footer list={list} selectedTask={selectedTask} />
+                    <Footer selectedTask={selectedTask} />
                 </div>
                 :
                 <div className="w-full h-full flex flex-col  justify-between items-end relative">

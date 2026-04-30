@@ -81,43 +81,61 @@ const ListCreateDialog = ({ open, onOpenChange }) => {
 
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const route = useRouter()
-
     const handleSubmitList = async () => {
+        const trimmedName = name.trim();
+
+        const reservedNames = ["inbox"];
+
+        if (reservedNames.includes(trimmedName.toLowerCase())) {
+            setErrors({
+                name: `"Inbox" is reserved for the system list`
+            });
+
+            showToast(
+                `"Inbox" cannot be used as a custom list name`,
+                "warning"
+            );
+
+            return;
+        }
+
         const formData = {
-            name,
+            name: trimmedName,
             type: listType,
             emoji: emoji || undefined,
             color: selectedColor,
             memberId: member?.id
-        }
+        };
 
-        const result = listSchema.safeParse(formData)
+        const result = listSchema.safeParse(formData);
 
         if (!result.success) {
-            const fieldErrors = result.error.flatten().fieldErrors
+            const fieldErrors = result.error.flatten().fieldErrors;
+
             setErrors({
                 name: fieldErrors.name?.[0],
                 type: fieldErrors.type?.[0]
-            })
-            return
+            });
+
+            return;
         }
 
-        setErrors({})
-        setIsSubmitting(true)
+        setErrors({});
+        setIsSubmitting(true);
 
         const res = await postList({
-            method: 'POST',
+            method: "POST",
             body: result.data
-        })
+        });
 
-        setIsSubmitting(false)
+        setIsSubmitting(false);
 
-        setName("")
-        setEmoji("")
-        setMember(null)
+        setName("");
+        setEmoji("");
+        setMember(null);
 
         if (res) {
-            showToast("List created successfully", "success")
+            showToast("List created successfully", "success");
 
             window.dispatchEvent(
                 new CustomEvent("new-list", {
@@ -125,15 +143,69 @@ const ListCreateDialog = ({ open, onOpenChange }) => {
                 })
             );
 
-
-            dispatch(fetchLists())
-            route.push('/library')
-            onOpenChange(false)
+            dispatch(fetchLists());
+            route.push("/library");
+            onOpenChange(false);
         } else {
-            showToast("Free users can only create up to 5 lists. Upgrade to PRO", "warning")
-            onOpenChange(false)
+            showToast(
+                "Free users can only create up to 5 lists. Upgrade to PRO",
+                "warning"
+            );
+            onOpenChange(false);
         }
-    }
+    };
+    // const handleSubmitList = async () => {
+    //     const formData = {
+    //         name,
+    //         type: listType,
+    //         emoji: emoji || undefined,
+    //         color: selectedColor,
+    //         memberId: member?.id
+    //     }
+
+    //     const result = listSchema.safeParse(formData)
+
+    //     if (!result.success) {
+    //         const fieldErrors = result.error.flatten().fieldErrors
+    //         setErrors({
+    //             name: fieldErrors.name?.[0],
+    //             type: fieldErrors.type?.[0]
+    //         })
+    //         return
+    //     }
+
+    //     setErrors({})
+    //     setIsSubmitting(true)
+
+    //     const res = await postList({
+    //         method: 'POST',
+    //         body: result.data
+    //     })
+
+    //     setIsSubmitting(false)
+
+    //     setName("")
+    //     setEmoji("")
+    //     setMember(null)
+
+    //     if (res) {
+    //         showToast("List created successfully", "success")
+
+    //         window.dispatchEvent(
+    //             new CustomEvent("new-list", {
+    //                 detail: res.data,
+    //             })
+    //         );
+
+
+    //         dispatch(fetchLists())
+    //         route.push('/library')
+    //         onOpenChange(false)
+    //     } else  {
+    //         showToast("Free users can only create up to 5 lists. Upgrade to PRO", "warning")
+    //         onOpenChange(false)
+    //     }
+    // }
 
     if (!open) return null
 

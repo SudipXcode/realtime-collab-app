@@ -22,7 +22,7 @@ const getPriorityStyles = (priority: string) => {
       return { text: "text-[#7C7C7C]", bg: "bg-[#7C7C7C]/10", border: "border-[#7C7C7C]/30" };
   }
 };
-const Heading = ({ selectedTask, list }) => {
+const Heading = ({ selectedTask }) => {
   const dispatch = useDispatch();
 
   const dateRef = React.useRef<HTMLInputElement | null>(null);

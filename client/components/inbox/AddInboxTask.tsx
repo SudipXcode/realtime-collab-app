@@ -7,7 +7,7 @@
 import { useOutsideClick } from '@/hooks/useOutSideclick';
 import { Annoyed, CalendarDays, ChevronDown, Flag } from 'lucide-react';
 import React from 'react';
-import MoreOptions from './MoreOptions';
+import MoreOptions from '../lists/MoreOptions';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 import { z } from "zod";
@@ -16,7 +16,7 @@ import { showToast } from '@/lib/toast';
 
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/redux/store";
-import { createTaskThunk } from "@/redux/thunk/taskThunk";
+import { createInboxTaskThunk } from "@/redux/thunk/taskThunk";
 
 /* ================= PRIORITY STYLES ================= */
 
@@ -37,7 +37,6 @@ const getPriorityStyles = (priority: string) => {
 
 const taskSchema = z.object({
     title: z.string().min(1, "Title is required").trim(),
-    listId: z.string().min(1, "List is required"),
     emoji: z.string().optional().nullable(),
     dueDate: z.string(),
     priority: z.enum(["Low", "Medium", "High", "None"]),
@@ -45,12 +44,11 @@ const taskSchema = z.object({
 
 /* ================= COMPONENT ================= */
 
-const AddTask = ({ list, isindex }) => {
+const AddInboxTask = ({ list }) => {
     const dispatch = useDispatch<AppDispatch>();
     const loading = useSelector((state: RootState) => state.task.creating);
 
-    /* ✅ FIX: always sync listId when list changes */
-    const [listId, setListId] = React.useState(list?.id);
+    // /* ✅ FIX: always sync listId when list changes */
     const [ListTitle, setListTitle] = React.useState(list?.name);
     const prevListIdRef = React.useRef<string | undefined>(list?.id);
     React.useEffect(() => {
@@ -92,7 +90,6 @@ const AddTask = ({ list, isindex }) => {
     const handleSubmit = async () => {
         const result = taskSchema.safeParse({
             title: taskTitle,
-            listId,
             emoji,
             dueDate,
             priority,
@@ -106,16 +103,15 @@ const AddTask = ({ list, isindex }) => {
         setFormError("");
 
         const action = await dispatch(
-            createTaskThunk({
+            createInboxTaskThunk({
                 title: result.data.title,
-                listId: result.data.listId,
                 emoji: result.data.emoji ?? null,
                 dueDate: result.data.dueDate,
                 priority: result.data.priority,
             })
         );
 
-        if (createTaskThunk.fulfilled.match(action)) {
+        if (createInboxTaskThunk.fulfilled.match(action)) {
             showToast("Task added!", "success");
 
             setTaskTitle("");
@@ -178,7 +174,7 @@ const AddTask = ({ list, isindex }) => {
                             setFormError("");
                         }}
                         onKeyDown={handleKeyDown}
-                        placeholder={`Add task to "${ListTitle}"`}
+                        placeholder={`Add task to Inbox`}
                         disabled={loading}
                         className='w-full text-[14px] outline-none font-medium h-full bg-transparent'
                     />
@@ -214,7 +210,7 @@ const AddTask = ({ list, isindex }) => {
                                 list={list}
                                 setListTitle={setListTitle}
                                 ListTitle={ListTitle}
-                                isindex={isindex}
+                                isindex={true}
                             />
                         )}
                     </div>
@@ -233,4 +229,4 @@ const AddTask = ({ list, isindex }) => {
     );
 };
 
-export default AddTask;
+export default AddInboxTask;

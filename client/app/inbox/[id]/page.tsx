@@ -31,7 +31,7 @@ export default async function Page({ params }: Props) {
       <ListNav />
       <Mylist initialData={list} />
       <Details
-        list={list}
+
       />
     </div>
   );

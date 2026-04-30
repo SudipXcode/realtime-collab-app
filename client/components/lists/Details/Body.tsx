@@ -31,18 +31,18 @@ const Body: React.FC<BodyProps> = ({ selectedTask }) => {
   const skipUpdate = React.useRef(true);
 
   /* ================= SYNC ================= */
-React.useEffect(() => {
-  setTitle(selectedTask.title || "");
-  setDescription(selectedTask.description || "");
+  React.useEffect(() => {
+    setTitle(selectedTask.title || "");
+    setDescription(selectedTask.description || "");
 
-  prev.current = {
-    title: selectedTask.title || "",
-    description: selectedTask.description || "",
-    id: selectedTask.id,
-  };
+    prev.current = {
+      title: selectedTask.title || "",
+      description: selectedTask.description || "",
+      id: selectedTask.id,
+    };
 
-  skipUpdate.current = true;
-}, [selectedTask.id]); // ✅ ONLY ID
+    skipUpdate.current = true;
+  }, [selectedTask.id]); // ✅ ONLY ID
 
   /* ================= UPDATE ================= */
   React.useEffect(() => {
@@ -53,7 +53,10 @@ React.useEffect(() => {
 
     if (prev.current.id !== selectedTask.id) return;
 
-    const updates: unknown = {};
+    const updates: {
+      title?: string;
+      description?: string;
+    } = {};
 
     if (prev.current.title !== title) updates.title = title;
     if (prev.current.description !== description)
@@ -87,11 +90,10 @@ React.useEffect(() => {
           placeholder="Task title…"
           minRows={1}
           /* ❌ NO maxRows */
-          className={`w-full text-[20px] font-bold resize-none outline-none overflow-hidden ${
-            selectedTask.isChecked
+          className={`w-full text-[20px] font-bold resize-none outline-none overflow-hidden ${selectedTask.isChecked
               ? "line-through text-[#7C7C7C]"
               : ""
-          }`}
+            }`}
         />
 
         <p className="text-[10px] text-[#7C7C7C] text-right">

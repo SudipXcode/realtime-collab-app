@@ -12,6 +12,7 @@ import {
 export interface Task {
   id: string;
   title: string;
+  description?: string;
   dueDate: string | null;
   createdAt: string;
   priority: "Low" | "Medium" | "High" | "None";
@@ -22,6 +23,7 @@ export interface Task {
 interface ApiTask {
   id: string;
   title: string;
+  description?: string;
   dueDate: string;
   createdAt: string;
   priority: string;
@@ -42,6 +44,7 @@ interface CreateTaskInput {
 const mapTask = (task: ApiTask, listId?: string): Task => ({
   id: task.id,
   title: task.title,
+  description: task.description ?? "",
   dueDate: task.dueDate ?? null,
   createdAt: task.createdAt,
   priority: (task.priority || "None") as Task["priority"],
@@ -50,6 +53,54 @@ const mapTask = (task: ApiTask, listId?: string): Task => ({
 });
 
 /* ================= CREATE ================= */
+export const createInboxTaskThunk = createAsyncThunk(
+  "tasks/createInbox",
+  async (data: CreateTaskInput, { dispatch, rejectWithValue }) => {
+    const tempId = Date.now().toString();
+
+    // Merge emoji into title
+    const finalTitle = data.emoji ? `${data.emoji} ${data.title}` : data.title;
+
+    const optimistic: Task = {
+      id: tempId,
+      title: finalTitle,
+      description: "",
+      dueDate: data.dueDate,
+      createdAt: new Date().toISOString(),
+      priority: data.priority,
+      isChecked: false,
+    };
+
+    // Optimistic update
+    dispatch(addTask(optimistic));
+
+    try {
+      const res = await apiCall<{ data: ApiTask }>("/api/task/inbox", {
+        method: "POST",
+        body: JSON.stringify({
+          title: finalTitle,
+          dueDate: data.dueDate,
+          priority: data.priority,
+        }),
+      });
+
+      dispatch(
+        replaceTask({
+          tempId,
+          realTask: mapTask(res.data),
+        }),
+      );
+
+      return res.data;
+    } catch (err: unknown) {
+      dispatch(removeTask(tempId));
+
+      return rejectWithValue(
+        err instanceof Error ? err.message : "Failed to create inbox task",
+      );
+    }
+  },
+);
 
 export const createTaskThunk = createAsyncThunk(
   "tasks/create",
@@ -62,6 +113,7 @@ export const createTaskThunk = createAsyncThunk(
     const optimistic: Task = {
       id: tempId,
       title: finalTitle,
+      description: "",
       dueDate: data.dueDate,
       createdAt: new Date().toISOString(),
       priority: data.priority,
@@ -180,7 +232,6 @@ export const deleteTaskThunk = createAsyncThunk(
   },
 );
 
-
 const timers: Record<string, NodeJS.Timeout> = {};
 const pending: Record<string, Partial<Task>> = {};
 
@@ -191,9 +242,7 @@ export const updateTaskDebouncedThunk =
 
     const state = getState();
 
-    const existingTask = state.task.tasks.find(
-      (t: Task) => t.id === id
-    );
+    const existingTask = state.task.tasks.find((t: Task) => t.id === id);
 
     // fallback for search page
     const resolvedListId = existingTask?.listId || data.listId;
@@ -224,7 +273,9 @@ export const updateTaskDebouncedThunk =
         if (raw.title !== undefined) {
           payload.title = raw.title;
         }
-
+        if (raw.description !== undefined) {
+          payload.description = raw.description;
+        }
         if (raw.dueDate !== undefined) {
           payload.dueDate = raw.dueDate;
         }
@@ -240,20 +291,13 @@ export const updateTaskDebouncedThunk =
         // no actual updates
         if (Object.keys(payload).length === 1) return;
 
-        const res = await apiCall<{ data: ApiTask }>(
-          `/api/task/${id}`,
-          {
-            method: "PATCH",
-            body: JSON.stringify(payload),
-          }
-        );
+        const res = await apiCall<{ data: ApiTask }>(`/api/task/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
 
         /* ================= HARD SYNC ================= */
-        dispatch(
-          updateTaskLocal(
-            mapTask(res.data, resolvedListId)
-          )
-        );
+        dispatch(updateTaskLocal(mapTask(res.data, resolvedListId)));
 
         delete pending[id];
         delete timers[id];

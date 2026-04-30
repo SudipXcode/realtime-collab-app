@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
+  createInboxTaskThunk,
   createTaskThunk,
   // getTasksThunk,
   deleteTaskThunk,
@@ -44,7 +45,7 @@ const TaskDetails = createSlice({
       // ✅ keep selectedTask in sync if exists
       if (state.selectedTask) {
         const updated = action.payload.find(
-          (t) => t.id === state.selectedTask?.id
+          (t) => t.id === state.selectedTask?.id,
         );
         state.selectedTask = updated || null;
       }
@@ -56,10 +57,10 @@ const TaskDetails = createSlice({
 
     replaceTask(
       state,
-      action: PayloadAction<{ tempId: string; realTask: Task }>
+      action: PayloadAction<{ tempId: string; realTask: Task }>,
     ) {
       const index = state.tasks.findIndex(
-        (t) => t.id === action.payload.tempId
+        (t) => t.id === action.payload.tempId,
       );
 
       if (index !== -1) {
@@ -83,7 +84,7 @@ const TaskDetails = createSlice({
 
     updateTaskLocal(
       state,
-      action: PayloadAction<Partial<Task> & { id: string }>
+      action: PayloadAction<Partial<Task> & { id: string }>,
     ) {
       const { id, ...changes } = action.payload;
 
@@ -107,7 +108,7 @@ const TaskDetails = createSlice({
 
   extraReducers: (builder) => {
     builder
- 
+
       .addCase(createTaskThunk.pending, (state) => {
         state.creating = true;
       })
@@ -117,7 +118,15 @@ const TaskDetails = createSlice({
       .addCase(createTaskThunk.rejected, (state) => {
         state.creating = false;
       })
-
+      .addCase(createInboxTaskThunk.pending, (state) => {
+        state.creating = true;
+      })
+      .addCase(createInboxTaskThunk.fulfilled, (state) => {
+        state.creating = false;
+      })
+      .addCase(createInboxTaskThunk.rejected, (state) => {
+        state.creating = false;
+      })
       /* DELETE */
       .addCase(deleteTaskThunk.fulfilled, (state, action) => {
         const { taskId } = action.payload;
