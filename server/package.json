@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "dev": "nodemon",
+    "dev": "nodemon src/server.ts",
     "dev:fast": "ts-node-dev --respawn --transpile-only --files src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"
