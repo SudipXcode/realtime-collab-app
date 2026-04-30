@@ -1,8 +1,7 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
+const BACKEND_URL = process.env.BACKEND_URL || "https://realtime-collab-app-production.up.railway.app";
 
 const REFRESH_SECRET = new TextEncoder().encode(
   process.env.REFRESH_TOKEN_SECRET || "refresh-secret"
@@ -21,8 +20,36 @@ async function verifyToken(token: string, secret: Uint8Array): Promise<boolean> 
   }
 }
 
+// ✅ Parse cookies from Set-Cookie header
+function parseSetCookieHeader(setCookieHeader: string): {
+  name: string;
+  value: string;
+}[] {
+  if (!setCookieHeader) return [];
+
+  // Handle multiple Set-Cookie headers (they come as comma-separated in some cases)
+  const cookies: { name: string; value: string }[] = [];
+
+  // Split by comma but be careful about the format
+  const cookieStrings = setCookieHeader.split(/,\s*(?=\w+=)/);
+
+  for (const cookieStr of cookieStrings) {
+    const [nameValue] = cookieStr.split(";"); // Get only name=value part
+    const [name, value] = nameValue.split("=");
+
+    if (name && value) {
+      cookies.push({
+        name: name.trim(),
+        value: value.trim(),
+      });
+    }
+  }
+
+  return cookies;
+}
+
 // ✅ Call backend refresh endpoint
-async function callRefreshEndpoint(refreshToken: string): Promise<{
+async function callRefreshEndpoint(refreshTokenValue: string): Promise<{
   success: boolean;
   accessToken?: string;
   refreshToken?: string;
@@ -31,28 +58,51 @@ async function callRefreshEndpoint(refreshToken: string): Promise<{
     const res = await fetch(`${BACKEND_URL}/api/auth/refresh`, {
       method: "POST",
       headers: {
-        Cookie: `refreshToken=${refreshToken}`,
+        Cookie: `refreshToken=${refreshTokenValue}`,
         "Content-Type": "application/json",
       },
+      credentials: "include", // ✅ Important: send cookies with request
     });
 
-    if (!res.ok) return { success: false };
+    if (!res.ok) {
+      console.error(`❌ Refresh endpoint returned ${res.status}`);
+      return { success: false };
+    }
 
-    // Parse new tokens from response headers or body
-    const setCookieHeader = res.headers.get("set-cookie");
-    if (!setCookieHeader) return { success: false };
+    // ✅ Get Set-Cookie header(s) from response
+    const setCookieHeaders = res.headers.getSetCookie(); // ✅ Use getSetCookie() for Next.js
+    
+    if (!setCookieHeaders || setCookieHeaders.length === 0) {
+      console.error("❌ No Set-Cookie header in response");
+      return { success: false };
+    }
 
-    const accessTokenMatch = setCookieHeader.match(/accessToken=([^;]+)/);
-    const refreshTokenMatch = setCookieHeader.match(/refreshToken=([^;]+)/);
+    let accessToken: string | undefined;
+    let refreshToken: string | undefined;
 
-    if (!accessTokenMatch?.[1] || !refreshTokenMatch?.[1]) {
+    // Parse all Set-Cookie headers
+    for (const setCookieHeader of setCookieHeaders) {
+      const parsed = parseSetCookieHeader(setCookieHeader);
+      
+      for (const cookie of parsed) {
+        if (cookie.name === "accessToken") {
+          accessToken = cookie.value;
+        } else if (cookie.name === "refreshToken") {
+          refreshToken = cookie.value;
+        }
+      }
+    }
+
+    if (!accessToken || !refreshToken) {
+      console.error("❌ Missing tokens in Set-Cookie headers");
+      console.error("Got headers:", setCookieHeaders);
       return { success: false };
     }
 
     return {
       success: true,
-      accessToken: accessTokenMatch[1],
-      refreshToken: refreshTokenMatch[1],
+      accessToken,
+      refreshToken,
     };
   } catch (err) {
     console.error("❌ Refresh endpoint error:", err);
