@@ -440,7 +440,7 @@ export const todayTaskService = async (
   });
 
   return lists
-    .map((list) => {
+    .map((list: any) => {
       const isOwner = list.ownerId === userId;
 
       const visibleTasks = list.tasks;
@@ -463,9 +463,9 @@ export const todayTaskService = async (
 
         isOwner,
 
-        isShared: list.members.some((m) => m.status === CollabStatus.ACCEPTED),
+        isShared: list.members.some((m: any) => m.status === CollabStatus.ACCEPTED),
 
-        members: list.members.map((m) => ({
+        members: list.members.map((m: any) => ({
           id: m.user.id,
           name: m.user.name ?? "Unknown",
           email: m.user.email,
@@ -473,7 +473,7 @@ export const todayTaskService = async (
           picture: m.user.picture ?? "Unknown",
         })),
 
-        tasks: visibleTasks.map((task) => ({
+        tasks: visibleTasks.map((task: any) => ({
           id: task.id,
           title: task.title,
           description: task.description ?? undefined,
@@ -537,7 +537,7 @@ export const inboxTaskService = async (
   });
 
   return lists
-    .map((list) => {
+    .map((list: any) => {
       const isOwner = list.ownerId === userId;
 
       const visibleTasks = list.tasks;
@@ -561,10 +561,10 @@ export const inboxTaskService = async (
         isOwner,
 
         isShared: list.members.some(
-          (m) => m.status === CollabStatus.ACCEPTED
+          (m: any) => m.status === CollabStatus.ACCEPTED
         ),
 
-        members: list.members.map((m) => ({
+        members: list.members.map((m: any) => ({
           id: m.user.id,
           name: m.user.name ?? "Unknown",
           email: m.user.email,
@@ -572,7 +572,7 @@ export const inboxTaskService = async (
           picture: m.user.picture ?? "Unknown",
         })),
 
-        tasks: visibleTasks.map((task) => ({
+        tasks: visibleTasks.map((task: any) => ({
           id: task.id,
           title: task.title,
           description: task.description ?? undefined,

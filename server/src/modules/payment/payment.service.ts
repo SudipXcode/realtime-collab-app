@@ -8,7 +8,7 @@ export const initiatePaymentService = async (
   amount: number,
   transactionUuid: string
 ): Promise<void> => {
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     let subscription = await tx.subscription.findUnique({
       where: { userId },
     });
@@ -78,7 +78,7 @@ export const verifyPaymentService = async (
   const nextMonth = new Date(baseDate);
   nextMonth.setMonth(nextMonth.getMonth() + 1);
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     // idempotent update
     if (payment.status !== PaymentStatus.SUCCESS) {
       await tx.payment.update({

@@ -177,7 +177,7 @@ export const getListLibraryService = async ({
 
   /* ================= FORMAT ================= */
 
-  const formattedLists = lists.map((list) => {
+  const formattedLists = lists.map((list: any) => {
     const isOwner = list.owner.id === id;
 
     return {
@@ -193,9 +193,9 @@ export const getListLibraryService = async ({
       },
 
       isOwner,
-      isShared: list.members.some((m) => m.status === CollabStatus.ACCEPTED),
+      isShared: list.members.some((m: any) => m.status === CollabStatus.ACCEPTED),
 
-      members: list.members.map((m) => ({
+      members: list.members.map((m: any) => ({
         id: m.user.id,
         name: m.user.name ?? "Unknown",
         email: m.user.email,
@@ -249,9 +249,9 @@ export const deleteListsService = async ({
   }
 
   // ✅ filter valid
-  const validLists = lists.filter((l) => l.ownerId === id && !l.isSystem);
+  const validLists = lists.filter((l: any) => l.ownerId === id && !l.isSystem);
 
-  const validIds = validLists.map((l) => l.id);
+  const validIds = validLists.map((l: any) => l.id);
 
   if (!validIds.length) {
     throw Errors.FORBIDDEN({

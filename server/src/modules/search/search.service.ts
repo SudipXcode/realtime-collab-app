@@ -110,10 +110,10 @@ export const getSearchTask = async (
   });
 
   return lists
-    .map((list) => {
+    .map((list: any) => {
       const listMatched = list.title.toLowerCase().includes(cleanQuery);
 
-      const matchedTasks = list.tasks.filter((task) =>
+      const matchedTasks = list.tasks.filter((task: any) =>
         task.title.toLowerCase().includes(cleanQuery),
       );
 
@@ -142,10 +142,10 @@ export const getSearchTask = async (
         isOwner,
 
         isShared: list.members.some(
-          (m) => m.status === CollabStatus.ACCEPTED,
+          (m: any) => m.status === CollabStatus.ACCEPTED,
         ),
 
-        members: list.members.map((m) => ({
+        members: list.members.map((m: any) => ({
           id: m.user.id,
           name: m.user.name ?? "Unknown",
           email: m.user.email,
@@ -153,7 +153,7 @@ export const getSearchTask = async (
           picture: m.user.picture ?? "Unknown",
         })),
 
-        tasks: visibleTasks.map((task) => ({
+        tasks: visibleTasks.map((task: any) => ({
           id: task.id,
           title: task.title,
           description: task.description ?? undefined,

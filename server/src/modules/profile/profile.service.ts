@@ -46,7 +46,7 @@ export const getProfileService = async (
       message: "User not found",
     });
   }
-  console.log(user)
+  
   const sub = user.subscriptions[0] ?? null;
 
   return {
@@ -54,7 +54,7 @@ export const getProfileService = async (
     email: user.email,
     name: user.name,
     picture: user.picture,
-    providers: user.accounts.map((acc) => acc.provider),
+    providers: user.accounts.map((acc: any) => acc.provider),
     isPro: !!sub,
     proExpiresAt: sub?.endDate ?? null,
   };
@@ -136,7 +136,7 @@ export const updateProfileService = async ({
         },
       },
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error("❌ Update failed:", err);
     throw Errors.INTERNAL({
       code: "PROFILE_UPDATE_FAILED",
@@ -152,7 +152,7 @@ export const updateProfileService = async ({
   ) {
     cloudinary.uploader
       .destroy(existingUser.pictureId)
-      .catch((err) => console.error("❌ Old image delete failed:", err));
+      .catch((err: any) => console.error("❌ Old image delete failed:", err));
   }
 
   /* ================= FORMAT RESPONSE ================= */
@@ -163,7 +163,7 @@ export const updateProfileService = async ({
     email: updatedUser.email,
     name: updatedUser.name,
     picture: updatedUser.picture,
-    providers: updatedUser.accounts.map((acc) => acc.provider),
+    providers: updatedUser.accounts.map((acc: any) => acc.provider),
     isPro: !!subscription,
     proExpiresAt: subscription?.endDate ?? null,
   };
@@ -201,7 +201,7 @@ export const deleteAccountService = async (id: string): Promise<void> => {
 
   /* ================= DELETE FIREBASE ================= */
 
-  const firebaseId = user.accounts.find((acc) => acc.firebaseId)?.firebaseId;
+  const firebaseId = user.accounts.find((acc: any) => acc.firebaseId)?.firebaseId;
 
   if (firebaseId) {
     try {
@@ -219,7 +219,7 @@ export const deleteAccountService = async (id: string): Promise<void> => {
   /* ================= DELETE USER (DB - TRANSACTION SAFE) ================= */
 
   try {
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       await tx.user.delete({
         where: { id },
       });
