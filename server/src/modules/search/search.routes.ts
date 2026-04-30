@@ -14,5 +14,10 @@ router.get(
   validate(searchMembersSchema, "query"),
   searchController.searchMembers,
 );
-
+router.get(
+  "/",
+  validateAccessToken,
+  validate(searchMembersSchema, "query"),
+  searchController.searchTask,
+);
 export default router;
