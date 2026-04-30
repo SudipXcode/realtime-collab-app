@@ -45,14 +45,14 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 /* ================= TYPES ================= */
 
 interface CollabMember {
-  id: number;
+  id: string;
   name: string;
   email: string;
   img: string;
 }
 
 interface Owner {
-  id: number;
+  id: string;
   name: string;
   email: string;
   img: string;
@@ -87,14 +87,14 @@ const collabSlice = createSlice({
         owner: Owner;
         members: CollabMember[];
         listId: number;
-        isowner: boolean;
+        isowner: any;
       }>,
     ) {
       state.isCollabOpen = true;
       state.collabMembers = action.payload.members;
       state.owner = action.payload.owner;
       state.listId = action.payload.listId;
-      state.isowner = action.payload.isOwner;
+      state.isowner = action.payload.isowner;
     },
 
     closeCollab(state) {

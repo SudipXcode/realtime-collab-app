@@ -4,13 +4,14 @@ import React from 'react'
 import { useOutsideClick } from '@/hooks/useOutSideclick';
 import { Globe, Plus, X } from 'lucide-react';
 import { useSelector } from 'react-redux';
-import type { RootState } from '@/store'; // ✅ FIXED
+
 import { useDebounce } from '@/hooks/useDebounce';
 import { useApi } from '@/hooks/useApi';
 import { useRouter } from "next/navigation"
 
 import Image from 'next/image';
 import { showToast } from '@/lib/toast';
+import { RootState } from '@/redux/store';
 
 const ShareDialog = ({ open, onOpenChange }) => {
     const route = useRouter()
@@ -29,14 +30,14 @@ const ShareDialog = ({ open, onOpenChange }) => {
     useOutsideClick(dropdownRef, () => setShowDropdown(false), showDropdown)
 
     const debouncedQuery = useDebounce(query, 600)
-    const [member, setMember] = React.useState<Member | null>(null);
+    const [member, setMember] = React.useState<any>(null);
 
-    const [results, setResults] = React.useState<Member[]>([])
+    const [results, setResults] = React.useState<any>([])
     const [loading, setLoading] = React.useState(false)
     const [isSelecting, setIsSelecting] = React.useState(false)
     const [loadingPost, setLoadingPost] = React.useState(false) // ✅ FIX
 
-    const { callApi: searchMember } = useApi<Member[]>('/api/search/members')
+    const { callApi: searchMember } = useApi<any>('/api/search/members')
 
     const { callApi: addMember } = useApi('/api/lists/member')
 
@@ -80,10 +81,10 @@ const ShareDialog = ({ open, onOpenChange }) => {
         })
 
         setLoadingPost(false)
-
+        const response = res as any;
         // ❌ Handle errors with custom messages
-        if (!res?.success) {
-            const msg = res?.message || ""
+        if (!response?.success) {
+      const msg = response?.message || ""
 
             if (msg.toLowerCase().includes("already a member")) {
                 showToast("Only one entry allowed — this user is already in the list", "error")

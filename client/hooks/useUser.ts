@@ -68,7 +68,7 @@ export function useUser(enabled: boolean = true) {
     queryKey: USER_KEY,
 
     queryFn: async () => {
-      const res = await apiCall<unknown>("/api/profile");
+      const res = await apiCall<any>("/api/profile");
 
       const user: User = {
         id: res.data.id,
@@ -94,13 +94,13 @@ export function useUser(enabled: boolean = true) {
 
   const { mutateAsync: updateProfile, isPending: updating } = useMutation({
     mutationFn: async (data: FormData) => {
-      return await apiCall<unknown>("/api/profile", {
+      return await apiCall<any>("/api/profile", {
         method: "PATCH",
         body: data,
       });
     },
 
-    onSuccess: (res) => {
+    onSuccess: (res: any) => {
       const updated: User = {
         id: res.data.id,
         name: res.data.name,

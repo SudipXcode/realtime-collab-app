@@ -7,7 +7,8 @@ import { Ellipsis, Star, UserPlus } from 'lucide-react'
 import Image from 'next/image'
 import React from 'react'
 import { useDispatch, } from 'react-redux'
-const ListHeader = ({ list, handleFunctionFavourite, handleDeleteList, isOwner }) => {
+
+const ListHeader:React.FC<any> = ({ list, handleFunctionFavourite, handleDeleteList, isOwner }) => {
   const [openListOptions, setOpenListOptions] = React.useState(false)
   const ListOptionRef = React.useRef(null)
   useOutsideClick(ListOptionRef, () => setOpenListOptions(false), openListOptions)
@@ -22,7 +23,7 @@ const ListHeader = ({ list, handleFunctionFavourite, handleDeleteList, isOwner }
       img: list?.owner?.picture,
     };
 
-    const normalizedMembers = list?.members?.map((m) => ({
+    const normalizedMembers = list?.members?.map((m: any) => ({
       userId: m?.id,  // optional
       name: m?.name,
       email: m?.email,
@@ -33,7 +34,7 @@ const ListHeader = ({ list, handleFunctionFavourite, handleDeleteList, isOwner }
       owner: normalizedOwner,
       members: normalizedMembers,
       listId: list?.id,
-      isOwner: isOwner
+      isowner: isOwner
     }));
   };
 
@@ -70,7 +71,7 @@ const ListHeader = ({ list, handleFunctionFavourite, handleDeleteList, isOwner }
           </div> :
           <button
             onClick={() =>
-              dispatch(openShare({ id: list?.id, owner: list?.owner, name: list?.name }))
+              dispatch(openShare({ id: list?.id, owner: list?.owner, title: list?.name }))
             }
             title='Share'
             className='h-8 w-8 flex items-center justify-center  rounded-xl hover:bg-[#2D2D2D] transition ease-in duration-150'>

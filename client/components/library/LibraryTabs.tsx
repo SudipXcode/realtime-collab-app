@@ -16,7 +16,7 @@ const LibraryTabs: React.FC<LibraryTabsProps> = ({
   setActiveTab,
   activeTab,
   hasPending
-}): JSX.Element => {
+}): React.JSX.Element => {
 
 
   return (

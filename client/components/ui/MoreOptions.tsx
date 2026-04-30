@@ -1,9 +1,7 @@
 import { Activity, CircleCheckBig, ListTree, Plus, Printer, Share2, View } from 'lucide-react'
 import React from 'react'
-interface ViewOptionsProps {
-  close: () => void
-}
-const MoreOptions: React.FC<ViewOptionsProps> = ({ close, className }) => {
+
+const MoreOptions: React.FC<any> = ({ close, className }) => {
   return (
     <div className={` ${className ? className : "right-0 top-8"} w-45 flex flex-col gap-0.5 h-auto px-1 py-2 border border-[#2D2D2D] bg-[#242424] shadow-lg z-30 rounded-xl absolute  `}>
       <button onClick={close} className='w-full px-2 flex items-center gap-2 text-[#d4d4d4] font-medium text-[13px] h-8 hover:bg-[#2F2F2F] transition ease-in duration-150 rounded-xl    '>

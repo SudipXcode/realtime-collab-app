@@ -45,7 +45,7 @@ const taskSchema = z.object({
 
 /* ================= COMPONENT ================= */
 
-const AddTask = ({ list, isindex }) => {
+const AddTask:React.FC<any> = ({ list, isindex }) => {
     const dispatch = useDispatch<AppDispatch>();
     const loading = useSelector((state: RootState) => state.task.creating);
 
@@ -153,7 +153,7 @@ const AddTask = ({ list, isindex }) => {
                                 <div style={{ transform: 'scale(0.8)', transformOrigin: 'top left' }}>
                                     <Picker
                                         data={data}
-                                        onEmojiSelect={(e: unknown) => {
+                                        onEmojiSelect={(e: any) => {
                                             setEmoji(e.native);
                                             setShowPicker(false);
                                         }}

@@ -110,9 +110,10 @@ import { deleteTaskThunk, moveTaskThunk } from '@/redux/thunk/taskThunk'
 import { useDispatch } from 'react-redux'
 import { showToast } from '@/lib/toast'
 import { setSelectedTask } from '@/redux/slices/TaskDetails'
+import { AppDispatch } from '@/redux/store'
 
 const Footer = ({ selectedTask }) => {
-  const dispatch = useDispatch()
+ const dispatch = useDispatch<AppDispatch>();
 
   const [openTaskSelect, setOpenListSelect] = React.useState(false)
   const moreOptionRef = React.useRef(null)
@@ -145,12 +146,12 @@ const Footer = ({ selectedTask }) => {
         showToast('Task deleted!', 'success')
       } else {
         const message =
-          (res.payload as unknown)?.message ||
+          (res.payload as any)?.message ||
           "You don't have permission to delete this task"
 
         showToast(message, 'warning')
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       showToast(err?.message || 'Failed to delete task', 'error')
     } finally {
       setLoadingDelete(false)
@@ -199,7 +200,7 @@ const Footer = ({ selectedTask }) => {
         showToast('Task moved successfully!', 'success')
       }
 
-    } catch (err: unknown) {
+    } catch (err: any) {
       showToast(err?.message || 'Failed to move task', 'error')
     } finally {
       setLoadingMove(false)

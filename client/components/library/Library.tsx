@@ -1,8 +1,7 @@
-
 "use client";
 
 import { ChevronDown, Plus, Star } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import LibraryTabs from "./LibraryTabs";
 import Approvel from "./tabs/Approvel";
 import Collaboration from "./tabs/Collaboration";
@@ -16,23 +15,40 @@ import { openList } from "@/redux/slices/ListSlice";
 import { useApi } from "@/hooks/useApi";
 import { showToast } from "@/lib/toast";
 import { fetchLists } from "@/redux/slices/ListsTitlesSlice";
+import type { AppDispatch } from "@/redux/store";
 
-// /* ================= TYPES ================= */
+/* ================= TYPES ================= */
 
 type Tab = "Recent" | "Favourites" | "Collaboration" | "Approval";
 export type Sort = "Date" | "Time" | "Tags" | "Priority";
 
 const tabs: Tab[] = ["Recent", "Favourites", "Collaboration", "Approval"];
 
-// /* ================= HELPERS ================= */
-
-function getToastMessage(res: unknown, fallback: string) {
-  return res?.message || res?.data?.message || fallback;
+export interface ListItem {
+  id: string;
+  name: string;
+  isFavourite: boolean;
+  isShared: boolean;
+  isPending: boolean;
 }
 
-function getErrorMessage(err: unknown, fallback: string) {
-  return err?.message || fallback;
+interface LibraryResponse {
+  success?: boolean;
+  message?: string;
+  data?: {
+    lists: ListItem[];
+    hasPending?: boolean;
+    pendingCount?: number;
+    isFavourite?: boolean;
+    status?: string;
+    listId?: string;
+  };
 }
+
+/* ================= HELPERS ================= */
+
+const getErrorMessage = (err: unknown, fallback: string) =>
+  err instanceof Error ? err.message : fallback;
 
 /* ================= COMPONENT ================= */
 
@@ -42,20 +58,26 @@ const Library: React.FC = () => {
   const [openSort, setOpenSort] = useState(false);
   const [selectedLists, setSelectedLists] = useState<string[]>([]);
 
-  const sortRef = React.useRef<HTMLDivElement | null>(null);
+  const sortRef = useRef<HTMLDivElement>(null);
   useOutsideClick(sortRef, () => setOpenSort(false), openSort);
 
-  const dispatch = useDispatch();
-
-  /* ================= MAIN API ================= */
+  const dispatch = useDispatch<AppDispatch>();
 
   const { data, loading, callApi, setData } =
-    useApi<TaskType[]>("/api/library");
+    useApi<LibraryResponse>("/api/library");
 
-  /* ================= LOAD DATA ================= */
+  const { callApi: deleteTask } =
+    useApi<LibraryResponse>("/api/library");
+
+  const { callApi: toggleFavourite } =
+    useApi<LibraryResponse>("/api/library/favourite");
+
+  const { callApi: postApproval } =
+    useApi<LibraryResponse>("/api/library/approval");
+
   /* ================= FETCH ================= */
 
-  const fetchLibrary = React.useCallback(() => {
+  const fetchLibrary = useCallback(() => {
     callApi({
       method: "GET",
       params: { tab: activeTab, sort },
@@ -66,88 +88,28 @@ const Library: React.FC = () => {
     fetchLibrary();
   }, [fetchLibrary]);
 
-  /* ================= REALTIME ================= */
-
   useEffect(() => {
-    const handler = () => {
-      fetchLibrary();
-    };
-
+    const handler = () => fetchLibrary();
     window.addEventListener("new-list", handler);
-
-    return () => {
-      window.removeEventListener("new-list", handler);
-    };
+    return () => window.removeEventListener("new-list", handler);
   }, [fetchLibrary]);
 
-  /* ================= REALTIME LISTENER ================= */
-
-  useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      const newList = e.detail;
-
-      setData((prev) => {
-        if (!prev || !prev.data) return prev;
-
-        const lists = prev.data.lists || [];
-
-        if (lists.some((item) => item.id === newList.id)) {
-          return prev;
-        }
-
-        if (activeTab === "Favourites" && !newList.isFavourite) return prev;
-        if (activeTab === "Collaboration" && !newList.isShared) return prev;
-        if (activeTab === "Approval" && !newList.isPending) return prev;
-
-        return {
-          ...prev,
-          data: {
-            ...prev.data,
-            lists: [newList, ...lists],
-          },
-        };
-      });
-    };
-
-    window.addEventListener("new-list", handler as EventListener);
-
-    return () => {
-      window.removeEventListener("new-list", handler as EventListener);
-    };
-  }, [setData, activeTab]);
-
-  /* ================= APIs ================= */
-
-  const { callApi: deleteTask } =
-    useApi<{ success: boolean; message?: string; data?: unknown }>(
-      "/api/library"
-    );
-
-  const { callApi: toggleFavourite } =
-    useApi<{ message?: string }>("/api/library/favourite");
-
-  const { callApi: postApproval } =
-    useApi<{ message?: string }>("/api/library/approval");
-
-  /* ================= DELETE ================= */
+  /* ================= ACTIONS ================= */
 
   const handleDeleteList = async (id?: string) => {
     const ids = id ? [id] : selectedLists;
-    if (!data) return;
+    if (!data?.data?.lists) return;
 
     const prev = data;
 
-    // ✅ instant UI update
     setData((p) => {
-      if (!p?.data?.lists) return p;
+      if (!p?.data) return p;
 
       return {
         ...p,
         data: {
           ...p.data,
-          lists: p.data.lists.filter(
-            (item) => !ids.includes(item.id)
-          ),
+          lists: p.data.lists.filter((item) => !ids.includes(item.id)),
         },
       };
     });
@@ -161,30 +123,26 @@ const Library: React.FC = () => {
       });
 
       if (!res?.success) {
-        setData(prev); // rollback
-        showToast("You are not allowed to delete these lists", "warning");
+        setData(prev);
+        showToast("Delete failed", "warning");
         return;
       }
 
       showToast("Task Deleted", "success");
-      dispatch(fetchLists()); // sidebar sync only
-
+      dispatch(fetchLists());
     } catch {
-      setData(prev); // rollback
+      setData(prev);
       showToast("Error deleting", "error");
     }
   };
 
-  /* ================= TOGGLE FAVOURITE ================= */
-
   const handleFunctionFavourite = async (id: string) => {
-    if (!data) return;
+    if (!data?.data?.lists) return;
 
     const prev = data;
 
-    // ✅ optimistic update
     setData((p) => {
-      if (!p?.data?.lists) return p;
+      if (!p?.data) return p;
 
       let updated = p.data.lists.map((item) =>
         item.id === id
@@ -211,132 +169,79 @@ const Library: React.FC = () => {
         body: { listId: id },
       });
 
-      /* ❌ HANDLE API FAILURE (your main issue) */
       if (!res?.success) {
-        setData(prev); // rollback UI
-
-        showToast(
-          res?.message || "You are not allowed to modify this list",
-          "warning"
-        );
-
-        return; // ⛔ stop further execution
+        setData(prev);
+        showToast("Favourite update failed", "warning");
+        return;
       }
-
-      /* ✅ SUCCESS */
-      setActiveTab(res.data.isFavourite ? "Favourites" : "Recent");
 
       showToast("Favourite updated", "success");
     } catch (err) {
       setData(prev);
-
-      showToast(
-        getErrorMessage(err, "Favourite update failed"),
-        "error"
-      );
+      showToast(getErrorMessage(err, "Favourite update failed"), "error");
     }
   };
 
-  /* ================= APPROVAL ================= */
-
   const handleFunctionApprove = async (id: string, state: boolean) => {
-    if (!data) return;
-
-    const prev = data;
-
     try {
-      const res = await postApproval({
+      await postApproval({
         method: "PATCH",
         body: { listId: id, isApproved: state },
       });
 
-      const status = res?.data?.status;
-      const listId = res?.data?.listId;
-
-      if (!status || !listId) {
-        throw new Error("Invalid response");
-      }
-
-      setData((p) => {
-        const lists = p?.data?.lists;
-        if (!lists) return p;
-
-        let updatedLists;
-
-        if (status === "REJECTED") {
-          // ❌ remove rejected
-          updatedLists = lists.filter((item) => item.id !== listId);
-        } else {
-          // ✅ ACCEPTED → remove from approval tab OR update UI
-          updatedLists = lists.filter((item) => item.id !== listId);
-        }
-
-        return {
-          ...p,
-          data: {
-            ...p.data,
-            lists: updatedLists,
-          },
-        };
-      });
-
-      showToast(
-        getToastMessage(
-          res,
-          status === "ACCEPTED" ? "Approved" : "Rejected"
-        ),
-        status === "ACCEPTED" ? "success" : "warning"
-      );
-      // 🔥 optional background sync (not required for UI correctness)
-      callApi({
-        method: "GET",
-        params: { tab: activeTab, sort },
-      });
-
+      fetchLibrary();
       dispatch(fetchLists());
     } catch (err) {
-      setData(prev);
-      showToast(
-        getErrorMessage(err, "Approval failed"),
-        "error"
-      );
+      showToast(getErrorMessage(err, "Approval failed"), "error");
     }
   };
 
+  /* ================= SHIMMER ================= */
 
-  function Shimmer({ className }: { className?: string }) {
-    return (
-      <div
-        className={`relative overflow-hidden rounded bg-white/5 ${className}`}
-      />
-    );
-  }
+  const Shimmer = ({
+    className,
+    style,
+  }: {
+    className?: string;
+    style?: React.CSSProperties;
+  }) => (
+    <div
+      className={`relative overflow-hidden rounded bg-white/5 ${className}`}
+      style={style}
+    />
+  );
 
   /* ================= UI ================= */
+
+  const lists = data?.data?.lists ?? [];
 
   return (
     <div className="w-full flex flex-col py-6 h-screen">
       <PageHeading title="All Lists" />
-      <div className="w-full h-auto  mt-6 px-6">
-        {data?.data?.hasPending && <div className="w-full mb-6 flex items-center gap-2 h-auto px-4 py-2 rounded-3xl bg-[#4772FA]/10">
-          <Star size={14} fill="#4772FA" className="text-[#4772FA]" />
-          <p className="text-[13px]  text-[#4772FA]">You have  pending list on apprival. Visit the approval tab to know about the list collobration with members. </p>
-        </div>
-        }
-        <div className="w-full  flex items-center">
+
+      <div className="w-full mt-6 px-6">
+        {data?.data?.hasPending && (
+          <div className="w-full mb-6 flex items-center gap-2 px-4 py-2 rounded-3xl bg-[#4772FA]/10">
+            <Star size={14} fill="#4772FA" className="text-[#4772FA]" />
+            <p className="text-[13px] text-[#4772FA]">
+              You have pending list on approval. Visit approval tab.
+            </p>
+          </div>
+        )}
+
+        <div className="w-full flex items-center">
           <LibraryTabs
             tabs={tabs}
             setActiveTab={setActiveTab}
             activeTab={activeTab}
             hasPending={data?.data?.hasPending}
-            pendingCount={data?.data?.pendingCount}
           />
 
           <div className="flex-1 flex justify-end gap-3">
             <div ref={sortRef} className="relative">
               <button
                 onClick={() => setOpenSort(!openSort)}
-                className="px-3 h-8 rounded-full flex items-center text-[13px] gap-1 text-[#a7a7a7] hover:text-white hover:bg-[#232323]"
+                className="px-3 h-8 rounded-full flex items-center text-[13px] gap-1 text-[#a7a7a7]"
               >
                 Sort by {sort}
                 <ChevronDown size={16} />
@@ -353,34 +258,30 @@ const Library: React.FC = () => {
 
             <button
               onClick={() => dispatch(openList())}
-              className="px-3 h-8 rounded-full flex items-center text-[13px] gap-1 text-[#a7a7a7] hover:text-white hover:bg-[#232323]"
+              className="px-3 h-8 rounded-full flex items-center text-[13px] gap-1 text-[#a7a7a7]"
             >
               <Plus size={16} /> Create list
             </button>
           </div>
         </div>
       </div>
+
       {loading ? (
         <div className="px-8 h-full pt-6">
           {[140, 180, 120, 160, 200].map((w, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-3 p-2 border-b border-white/5"
-            >
+            <div key={i} className="flex gap-3 p-2 border-b border-white/5">
               <Shimmer className="h-4 w-4" />
               <div className="flex flex-col gap-2 flex-1">
                 <Shimmer className="h-3" style={{ width: w }} />
-                <Shimmer className="h-2.5 opacity-60" style={{ width: w + 60 }} />
               </div>
             </div>
           ))}
         </div>
       ) : (
-
         <div className="w-full flex items-center justify-center h-full">
           {activeTab === "Recent" && (
             <Recent
-              data={data?.data?.lists ?? []}
+              data={lists}
               selectedLists={selectedLists}
               setSelectedLists={setSelectedLists}
               handleDeleteList={handleDeleteList}
@@ -390,7 +291,7 @@ const Library: React.FC = () => {
 
           {activeTab === "Favourites" && (
             <Favourites
-              data={data?.data?.lists ?? []}
+              data={lists}
               selectedLists={selectedLists}
               setSelectedLists={setSelectedLists}
               handleDeleteList={handleDeleteList}
@@ -400,7 +301,7 @@ const Library: React.FC = () => {
 
           {activeTab === "Collaboration" && (
             <Collaboration
-              data={data?.data?.lists ?? []}
+              data={lists}
               selectedLists={selectedLists}
               setSelectedLists={setSelectedLists}
               handleDeleteList={handleDeleteList}
@@ -410,7 +311,7 @@ const Library: React.FC = () => {
 
           {activeTab === "Approval" && (
             <Approvel
-              data={data?.data?.lists ?? []}
+              data={lists}
               selectedLists={selectedLists}
               setSelectedLists={setSelectedLists}
               handleDeleteList={handleDeleteList}

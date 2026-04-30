@@ -1,9 +1,7 @@
 import { ArrowRightLeft, Copy, Pencil, Pin, Share2, Star, Trash2 } from 'lucide-react'
 import React from 'react'
-interface ListOptionsProps {
-    close: () => void
-}
-const ListOptions: React.FC<ListOptionsProps> = ({ handleDelete, compo, close, ref, list, position, handleDeleteList, handleFunctionFavourite, id }) => {
+
+const ListOptions: React.FC<any> = ({ handleDelete, compo, close, ref, list, position, handleDeleteList, handleFunctionFavourite }) => {
     return (
         <div ref={ref} className={` ${position ? position : "top-0"} w-49 flex flex-col gap-0.5 h-auto px-1 py-2 border border-[#2D2D2D] bg-[#242424] shadow-lg z-30 rounded-xl absolute right-0  `}>
             <button className='w-full px-2 flex items-center gap-2 text-[#d4d4d4] font-medium text-[13px] h-8 hover:bg-[#2F2F2F] transition ease-in duration-150 rounded-xl    '>

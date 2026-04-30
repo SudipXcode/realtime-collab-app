@@ -4,18 +4,16 @@
 import React from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import { useDispatch } from "react-redux";
-import { FullTaskFields } from "@/redux/slices/TaskDetails";
+
 import { updateTaskDebouncedThunk } from "@/redux/thunk/taskThunk";
+import { AppDispatch } from "@/redux/store";
 
 const TITLE_MAX = 120;
 const DESC_MAX = 5000;
 
-interface BodyProps {
-  selectedTask: FullTaskFields;
-}
 
-const Body: React.FC<BodyProps> = ({ selectedTask }) => {
-  const dispatch = useDispatch();
+const Body: React.FC<any> = ({ selectedTask }) => {
+ const dispatch = useDispatch<AppDispatch>();
 
   const [title, setTitle] = React.useState(selectedTask.title || "");
   const [description, setDescription] = React.useState(

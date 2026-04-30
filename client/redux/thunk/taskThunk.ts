@@ -6,6 +6,7 @@ import {
   replaceTask,
   updateTaskLocal,
 } from "../slices/TaskDetails";
+import { RootState } from "../store";
 
 /* ================= TYPES ================= */
 
@@ -69,6 +70,7 @@ export const createInboxTaskThunk = createAsyncThunk(
       createdAt: new Date().toISOString(),
       priority: data.priority,
       isChecked: false,
+      listId: "",
     };
 
     // Optimistic update
@@ -142,7 +144,7 @@ export const createTaskThunk = createAsyncThunk(
       );
 
       return res.data;
-    } catch (err: unknown) {
+    } catch (err: any) {
       dispatch(removeTask(tempId));
       return rejectWithValue(err.message);
     }
@@ -175,7 +177,7 @@ export const moveTaskThunk = createAsyncThunk(
       );
 
       /* ================= API ================= */
-      const res = await apiCall<{ data: ApiTask }>(`/api/task/${taskId}/move`, {
+      const res = await apiCall<{ data: any }>(`/api/task/${taskId}/move`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json", // 🔥 REQUIRED
@@ -198,7 +200,7 @@ export const moveTaskThunk = createAsyncThunk(
       );
 
       return res.data;
-    } catch (err: unknown) {
+    } catch (err: any) {
       /* ================= ROLLBACK ================= */
       dispatch(
         updateTaskLocal({
@@ -226,7 +228,7 @@ export const deleteTaskThunk = createAsyncThunk(
       });
 
       return { taskId };
-    } catch (err: unknown) {
+    } catch (err: any) {
       return rejectWithValue(err.message);
     }
   },
@@ -237,7 +239,7 @@ const pending: Record<string, Partial<Task>> = {};
 
 export const updateTaskDebouncedThunk =
   (data: Partial<Task> & { id: string }) =>
-  async (dispatch: unknown, getState: unknown) => {
+  async (dispatch: any, getState: any) => {
     const { id, ...rest } = data;
 
     const state = getState();

@@ -13,7 +13,7 @@ import { closeShare } from "@/redux/slices/ShareSlice"
 import ShareDialog from "./ShareDialog"
 import CollabDialog from "./CollabDialog"
 
-export default function DialogProvider(): JSX.Element {
+export default function DialogProvider(): React.JSX.Element {
     const dispatch = useDispatch<AppDispatch>()
 
     const isProfileOpen = useSelector<RootState, boolean>(

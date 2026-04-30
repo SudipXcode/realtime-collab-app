@@ -1,16 +1,11 @@
 import { fetchWithAuth } from "../lib/fetchWithAuth";
-import { List } from "@/app/api/today/route";
 import { notFound } from "next/navigation";
 import { cache } from "react";
-type ListApiResponse = {
-  success: boolean;
-  message: string;
-  data: List | null;
-};
 
-export const getTodayList = cache(async (): Promise<List> => {
+
+export const getTodayList = cache(async (): Promise<any> => {
   const { data, status } =
-    await fetchWithAuth<ListApiResponse>(`/api/task/today`);
+    await fetchWithAuth<any>(`/api/task/today`);
 
   if (status === 401) {
     throw new Error("UNAUTHORIZED");

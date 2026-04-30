@@ -1,7 +1,7 @@
 
 import { cookies } from "next/headers";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
+const BACKEND_URL = process.env.BACKEND_URL || "https://realtime-collab-app-production.up.railway.app";
 
 export type FetchResult<T> = {
   data: T | null;

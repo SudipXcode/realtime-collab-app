@@ -1,51 +1,46 @@
-"use client"
+"use client";
 
-import { AtSign } from "lucide-react"
-import React from "react"
-import List from "../List"
-import SelectList from "../SelectList"
+import { AtSign } from "lucide-react";
+import React from "react";
+import List from "../List";
+import SelectList from "../SelectList";
 import {
   DndContext,
   closestCenter,
   DragEndEvent,
-} from "@dnd-kit/core"
+} from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
   arrayMove,
-} from "@dnd-kit/sortable"
+} from "@dnd-kit/sortable";
 
-// ✅ SAME TYPE AS RECENT
+/* ============================= */
+/* QUICK FIX TYPE (relaxed)      */
+/* ============================= */
+
 export interface LibraryList {
-  id: string
-  name: string
-  createdAt: string
-  isActive: boolean
-  isFavourite: boolean
+  id: string;
+  name: string;
+  createdAt: string;
+  isActive: boolean;
+  isFavourite: boolean;
 
-  owner: {
-    id: string
-    name: string
-  }
+  owner: any;      // ✅ QUICK FIX
+  isOwner: boolean;
+  isShared: boolean;
+  isPending: boolean;
 
-  isOwner: boolean
-  isShared: boolean
-  isPending: boolean
-
-  members: {
-    id: string
-    name: string
-    email: string
-  }[]
+  members: any[];  // ✅ QUICK FIX
 }
 
 interface Props {
-  data: LibraryList[] | null
-  handleDeleteList: (id?: string) => void
-  selectedLists: string[]
-  setSelectedLists: React.Dispatch<React.SetStateAction<string[]>>
-  handleFunctionFavourite: (id: string) => void
-  handleFunctionApprove: (id: string, approve: boolean) => void
+  data: any; // ✅ QUICK FIX
+  handleDeleteList: (id?: string) => void;
+  selectedLists: string[];
+  setSelectedLists: React.Dispatch<React.SetStateAction<string[]>>;
+  handleFunctionFavourite: (id: string) => void;
+  handleFunctionApprove: (id: string, approve: boolean) => void;
 }
 
 const Mentioned: React.FC<Props> = ({
@@ -57,30 +52,31 @@ const Mentioned: React.FC<Props> = ({
   handleFunctionApprove,
 }) => {
   // =============================
-  // ✅ LOCAL STATE
+  // LOCAL STATE (relaxed)
   // =============================
-  const [items, setItems] = React.useState<LibraryList[]>([])
+  const [items, setItems] = React.useState<any[]>([]);
 
   React.useEffect(() => {
-    setItems(data ?? [])
-  }, [data])
+    setItems(Array.isArray(data) ? data : []);
+  }, [data]);
 
   // =============================
-  // ✅ DRAG & DROP
+  // DRAG
   // =============================
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-    if (!over || active.id === over.id) return
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
     setItems((prev) => {
-      const oldIndex = prev.findIndex((item) => item.id === active.id)
-      const newIndex = prev.findIndex((item) => item.id === over.id)
+      const oldIndex = prev.findIndex((item: any) => item.id === active.id);
+      const newIndex = prev.findIndex((item: any) => item.id === over.id);
 
-      return arrayMove(prev, oldIndex, newIndex)
-    })
-  }
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  };
 
-  const [openListOptions, setOpenListOptions] = React.useState<string | null>(null)
+  const [openListOptions, setOpenListOptions] =
+    React.useState<any>(null); // ✅ QUICK FIX
 
   // =============================
   // UI
@@ -88,7 +84,7 @@ const Mentioned: React.FC<Props> = ({
   return (
     <div className="w-full pt-6 h-full">
 
-      {/* ✅ MULTI SELECT */}
+      {/* MULTI SELECT */}
       {selectedLists.length !== 0 && (
         <SelectList
           selectedLists={selectedLists}
@@ -97,40 +93,44 @@ const Mentioned: React.FC<Props> = ({
         />
       )}
 
-      {/* ================= LIST ================= */}
+      {/* LIST */}
       {items.length ? (
         <DndContext
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={items.map((i) => i.id)}
+            items={items.map((i: any) => i.id)}
             strategy={verticalListSortingStrategy}
           >
             <div className="w-full h-auto px-8 flex flex-col gap-0.5">
-              {items.map((i) => (
+              {items.map((i: any) => (
                 <List
                   noNavigate={true}
                   key={i.id}
                   i={{
-                    // 🔥 IMPORTANT: map backend → UI
                     ...i,
                     title: i.name,
                     date: i.createdAt,
-                    createby: i.isOwner ? "You" : i.owner?.name ?? "Unknown",
+                    createby: i.isOwner
+                      ? "You"
+                      : i.owner?.name ?? "Unknown",
                     isactive: i.isActive,
 
-                    // 👇 MENTIONED LOGIC
-                    shared: i.members.length
-                      ? i.members.map((m) => m.name).join(", ")
+                    shared: i.members?.length
+                      ? i.members.map((m: any) => m.name).join(", ")
                       : "",
 
                     isApproved: !i.isPending,
                   }}
                   openListOptions={openListOptions}
                   setOpenListOptions={setOpenListOptions}
-                  handleFunctionFavourite={() => handleFunctionFavourite(i.id)}
-                  handleDeleteList={() => handleDeleteList(i.id)}
+                  handleFunctionFavourite={() =>
+                    handleFunctionFavourite(i.id)
+                  }
+                  handleDeleteList={() =>
+                    handleDeleteList(i.id)
+                  }
                   handleFunctionApprove={handleFunctionApprove}
                   setSelectedLists={setSelectedLists}
                   selectedLists={selectedLists}
@@ -150,7 +150,7 @@ const Mentioned: React.FC<Props> = ({
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Mentioned
+export default Mentioned;

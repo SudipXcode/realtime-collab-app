@@ -3,15 +3,29 @@
 import { useState, useCallback, useEffect } from "react";
 import { apiCall, ApiOptions } from "@/lib/apiCall";
 
+/* ============================= */
+/* TYPES                        */
+/* ============================= */
+
+type ApiInput =
+  | FormData
+  | (ApiOptions & {
+      silent?: boolean;
+      path?: string;
+    })
+  | unknown;
+
 interface UseApiReturn<T> {
   data: T | null;
   error: string | null;
   loading: boolean;
-  callApi: (
-    input?: unknown | (ApiOptions & { silent?: boolean; path?: string })
-  ) => Promise<T | undefined>;
+  callApi: (input?: ApiInput) => Promise<T | undefined>;
   setData: React.Dispatch<React.SetStateAction<T | null>>;
 }
+
+/* ============================= */
+/* HOOK                         */
+/* ============================= */
 
 export function useApi<T = unknown>(
   endpoint: string,
@@ -21,7 +35,6 @@ export function useApi<T = unknown>(
     defaultOptions?: ApiOptions;
   }
 ): UseApiReturn<T> {
-  /* ✅ MISSING STATE (FIXED) */
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -31,9 +44,7 @@ export function useApi<T = unknown>(
   const defaultOptions = config?.defaultOptions;
 
   const callApi = useCallback(
-    async (
-      input?: unknown | (ApiOptions & { silent?: boolean; path?: string })
-    ): Promise<T | undefined> => {
+    async (input?: ApiInput): Promise<T | undefined> => {
       setLoading(true);
       setError(null);
 
@@ -41,27 +52,32 @@ export function useApi<T = unknown>(
         let finalOptions: ApiOptions & {
           silent?: boolean;
           path?: string;
-        } = {};
+        } = {
+          ...defaultOptions,
+        };
+
+        /* ============================= */
+        /* HANDLE INPUT                 */
+        /* ============================= */
 
         if (input instanceof FormData) {
-          finalOptions = {
-            ...defaultOptions,
-            body: input,
-          };
+          finalOptions.body = input;
         } else if (
+          input &&
           typeof input === "object" &&
-          input !== null &&
-          ("method" in input || "body" in input || "params" in input)
+          !Array.isArray(input)
         ) {
-          finalOptions = {
-            ...defaultOptions,
-            ...input,
+          const maybeOptions = input as ApiOptions & {
+            silent?: boolean;
+            path?: string;
           };
-        } else {
+
           finalOptions = {
-            ...defaultOptions,
-            body: input,
+            ...finalOptions,
+            ...maybeOptions,
           };
+        } else if (input !== undefined) {
+          finalOptions.body = input;
         }
 
         const finalUrl = finalOptions.path
@@ -79,10 +95,10 @@ export function useApi<T = unknown>(
         setError(message);
 
         const isSilent =
+          input &&
           typeof input === "object" &&
-          input !== null &&
           "silent" in input &&
-          (input as unknown).silent;
+          (input as { silent?: boolean }).silent;
 
         if (!isSilent && showErrorToast !== false) {
           // showToast(message, "error");
@@ -96,7 +112,9 @@ export function useApi<T = unknown>(
     [endpoint, defaultOptions, showErrorToast]
   );
 
-  /* ================= AUTO REFRESH ================= */
+  /* ============================= */
+  /* AUTO REFRESH                */
+  /* ============================= */
 
   useEffect(() => {
     if (!autoRefresh) return;

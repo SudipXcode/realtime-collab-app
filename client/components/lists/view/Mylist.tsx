@@ -6,7 +6,6 @@ import React, { useState } from "react";
 import ListHeader from "./ListHeader";
 import AddTask from "../AddTask";
 import AllTasks from "./AllTasks";
-import { List } from "@/app/api/lists/[id]/route";
 import { showToast } from "@/lib/toast";
 import { useApi } from "@/hooks/useApi";
 import { useRouter } from "next/navigation";
@@ -15,22 +14,20 @@ import { useRouter } from "next/navigation";
 
 /* ================= TYPE ================= */
 
-type Props = {
-  initialData?: List | null;
-};
+
 
 /* ================= HELPERS ================= */
 
-function getToastMessage(res: unknown, fallback: string) {
+function getToastMessage(res: any, fallback: string) {
   return res?.message || res?.data?.message || fallback;
 }
 
 /* ================= COMPONENT ================= */
 
-const Mylist = ({ initialData }: Props) => {
+const Mylist: React.FC<any> = ({ initialData }) => {
 
 
-  const [list, setList] = useState<List | null>(initialData ?? null);
+  const [list, setList] = useState< any>(initialData ?? null);
 
   const router = useRouter();
 
@@ -91,7 +88,7 @@ const Mylist = ({ initialData }: Props) => {
       );
 
       router.push("/library");
-    } catch (err: unknown) {
+    } catch (err: any) {
       setList(prevData);
       showToast(err?.message || "Failed to delete list", "error");
     } finally {
@@ -124,7 +121,7 @@ const Mylist = ({ initialData }: Props) => {
       });
 
       showToast(getToastMessage(res, "Favourite updated"), "success");
-    } catch (err: unknown) {
+    } catch (err: any) {
       setList(prevData);
       showToast(err?.message || "Failed to update favourite", "error");
     } finally {

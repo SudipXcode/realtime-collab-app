@@ -8,7 +8,7 @@ import Body from './Body';
 import Footer from './Footer';
 
 const Details = () => {
-    const selectedTask = useSelector((state) => state.task.selectedTask);
+    const selectedTask = useSelector((state: any) => state.task.selectedTask);
 
     return (
         <div className="w-90 flex-none border-l  border-[#2D2D2D] h-full ">

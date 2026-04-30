@@ -3,19 +3,8 @@ import React, { useRef } from 'react'
 import ListsSelect from './Details/ListsSelect'
 import { useOutsideClick } from '@/hooks/useOutSideclick'
 
-interface MoreOptionsProps {
-    close: () => void
-    listsOpen: boolean
-    setListsOpen: (val: boolean) => void
-    deleteoption?: boolean
-    position?: string
-    setListId?: (listId: string) => void
-    setList?: (listId: string) => void
-    ListTitle?: string
-    isindex?: boolean
-}
 
-const MoreOptions: React.FC<MoreOptionsProps> = ({ setList, isindex, setListId, ListTitle, setListTitle, ref, close, taskOpen, setTaskOpen, deleteoption, position, priority, setPriority, handleDelete }) => {
+const MoreOptions: React.FC<any> = ({ setList, isindex, setListId, ListTitle, setListTitle, ref, close, taskOpen, setTaskOpen, deleteoption, position, priority, setPriority, handleDelete }) => {
     const containerRef = useRef<HTMLDivElement>(null)
 
 

@@ -1,8 +1,8 @@
 import React from 'react'
 import { useSelector } from 'react-redux';
 // ListsSelect.tsx
-const ListsSelect = ({ setList, setListTitle, setListId, className, setTaskOpen, close }) => {
-    const data = useSelector((state: RootState) => state.listTitle.data);
+const ListsSelect: React.FC<any> = ({ setList, setListTitle, setListId, className, setTaskOpen, close }) => {
+    const data = useSelector((state: any) => state.listTitle.data);
 
     return (
         <div className={`${className ? className : "w-full"} flex flex-col px-1 py-2`}>

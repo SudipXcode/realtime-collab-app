@@ -105,7 +105,7 @@ const Sidebar: React.FC = () => {
         <Link href="/search">
           <button
             title="Search"
-            onClick={() => dispatch(setSelectedTask())}
+            onClick={() => dispatch(setSelectedTask(null))}
             className={`${path === "/search"
               ? "text-white"
               : "text-[#7C7C7C] transition ease-linear duration-150 hover:text-white"

@@ -8,10 +8,28 @@ import { useDispatch, useSelector } from 'react-redux'
 import { openList } from '@/redux/slices/ListSlice'
 import { fetchLists } from '@/redux/slices/ListsTitlesSlice'
 import { setSelectedTask } from '@/redux/slices/TaskDetails'
+import type { RootState,AppDispatch } from "@/redux/store";
 
-const ListNav: React.FC = (): JSX.Element => {
+
+function Shimmer({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div
+      style={style}
+      className={`relative overflow-hidden rounded bg-white/5 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.6s_infinite] before:bg-linear-to-r before:from-transparent before:via-white/10 before:to-transparent ${className}`}
+    />
+  );
+}
+
+
+const ListNav: React.FC = (): React.JSX.Element => {
     const path = usePath()
-    const dispatch = useDispatch()
+const dispatch = useDispatch<AppDispatch>();
     const isNewlist = false
     const { data, loading, loaded } = useSelector(
         (state: RootState) => state.listTitle
@@ -23,13 +41,7 @@ const ListNav: React.FC = (): JSX.Element => {
         }
     }, [loaded, dispatch]);
 
-    function Shimmer({ className }: { className?: string }) {
-        return (
-            <div
-                className={`relative overflow-hidden rounded bg-white/5 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.6s_infinite] before:bg-linear-to-r before:from-transparent before:via-white/10 before:to-transparent ${className}`}
-            />
-        )
-    }
+
 
 
     return (
@@ -55,7 +67,7 @@ const ListNav: React.FC = (): JSX.Element => {
                             onClick={() =>
 
 
-                                dispatch(setSelectedTask())
+                                dispatch(setSelectedTask(null))
                             }
                             title='Today' className={` ${path === "/today" ? "bg-[#2D2D2D]" : "hover:bg-[#232323] transition ease-in duration-150"} w-full  h-auto flex px-3 rounded-3xl py-2 gap-2 text-[13px] font-medium   items-center`}>
                             <CalendarCheck2 strokeWidth={2} size={17} />
@@ -67,7 +79,7 @@ const ListNav: React.FC = (): JSX.Element => {
                             onClick={() =>
 
 
-                                dispatch(setSelectedTask())
+                                dispatch(setSelectedTask(null))
                             }
                             title='Inbox' className={` ${path === "/inbox" ? "bg-[#2D2D2D]" : "hover:bg-[#232323] transition ease-in duration-150"} w-full  h-auto flex px-3 rounded-3xl py-2 gap-2 text-[13px] font-medium  items-center`}>
                             <span className='flex items-center gap-2'>
@@ -98,7 +110,7 @@ const ListNav: React.FC = (): JSX.Element => {
                         </div> : <div className='w-full flex flex-col gap-0.5 h-full'>
                             {data?.slice(0, 5).map((i) => (
                                 <Link key={i.id} href={`/inbox/${i.id}`}>
-                                    <button onClick={() => dispatch(setSelectedTask())}
+                                    <button onClick={() => dispatch(setSelectedTask(null))}
                                         title={i.name} className={`${path === `/inbox/${i.id}` ? "bg-[#2D2D2D]" : "hover:bg-[#232323] transition ease-in duration-150"} w-full h-auto flex px-3 rounded-3xl py-1.5 gap-2 text-[13px] font-medium items-center`}>
                                         <span className="overflow-hidden text-ellipsis whitespace-nowrap w-full text-left">{i.name}</span>
                                     </button>

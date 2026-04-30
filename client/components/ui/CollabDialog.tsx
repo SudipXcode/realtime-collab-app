@@ -54,7 +54,7 @@ const CollabDialog = ({ open, onOpenChange }) => {
         dispatch(
           openCollab({
             owner,
-            members: member.filter((m) => m.id !== memberId), // ✅ works now
+            members: member.filter((m: any) => m.id !== memberId), // ✅ works now
             listId,
             isowner: isOwner, // ✅ don't forget this
           })
@@ -66,7 +66,7 @@ const CollabDialog = ({ open, onOpenChange }) => {
         router.push("/library"); // 🚀 redirect here
       }
 
-    } catch (err: unknown) {
+    } catch (err: any) {
       if (!err?.status || err.status >= 500) {
         console.error("Failed to remove member", err);
       }
@@ -139,7 +139,7 @@ const CollabDialog = ({ open, onOpenChange }) => {
             </div>
 
             {isOwner ? <button
-              onClick={() => handleRemove(member[0]?.userId)}
+              onClick={() => handleRemove(member[0]?.id)}
               className='ml-auto flex gap-1 text-[12px] hover:text-red-600'
             >
               <X size={15} />

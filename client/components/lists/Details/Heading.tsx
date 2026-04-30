@@ -8,6 +8,7 @@ import { CalendarDays, Check, Flag } from 'lucide-react';
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { showToast } from '@/lib/toast';
+import { AppDispatch } from '@/redux/store';
 
 const todayISO = new Date().toISOString().split("T")[0];
 const getPriorityStyles = (priority: string) => {
@@ -22,8 +23,8 @@ const getPriorityStyles = (priority: string) => {
       return { text: "text-[#7C7C7C]", bg: "bg-[#7C7C7C]/10", border: "border-[#7C7C7C]/30" };
   }
 };
-const Heading = ({ selectedTask }) => {
-  const dispatch = useDispatch();
+const Heading: React.FC<any> = ({ selectedTask }) => {
+ const dispatch = useDispatch<AppDispatch>();
 
   const dateRef = React.useRef<HTMLInputElement | null>(null);
   const [isDateOpen, setIsDateOpen] = React.useState(false);

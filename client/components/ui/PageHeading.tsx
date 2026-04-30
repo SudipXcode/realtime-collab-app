@@ -10,7 +10,7 @@ type PageHeadingProps = {
 
 const PageHeading: React.FC<PageHeadingProps> = ({
     title,
-}): JSX.Element => {
+}): React.JSX.Element => {
     const [openMoreOptions, setOpenMoreOptions] = React.useState<boolean>(false)
     const openMoreOptionsRef = React.useRef<HTMLDivElement>(null)
     useOutsideClick(openMoreOptionsRef, () => setOpenMoreOptions(false), openMoreOptions)

@@ -2,13 +2,14 @@
 
 import { formatDate } from '@/lib/DateFormatting';
 import { showToast } from '@/lib/toast';
+import { AppDispatch } from '@/redux/store';
 import { updateTaskDebouncedThunk } from '@/redux/thunk/taskThunk';
 import { Check } from 'lucide-react';
 import React from 'react';
 import { useDispatch } from 'react-redux';
 
-const Task = ({ task, query, listId }) => {
-  const dispatch = useDispatch();
+const Task: React.FC<any> = ({ task, query, listId }) => {
+  const dispatch = useDispatch<AppDispatch>();
 
   const [isChecking, setIsChecking] = React.useState(false);
   const [checked, setChecked] = React.useState(task?.isChecked);

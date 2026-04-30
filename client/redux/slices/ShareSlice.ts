@@ -18,7 +18,7 @@ const initialState: ShareState = {
   listId: null,
   title: null,
   owner: null,
-  isOwner: null,
+ 
 };
 
 const shareSlice = createSlice({
@@ -28,7 +28,7 @@ const shareSlice = createSlice({
     openShare(
       state,
       action: PayloadAction<{
-        id: number;
+        id: string;
         title: string;
         owner: Owner;
 

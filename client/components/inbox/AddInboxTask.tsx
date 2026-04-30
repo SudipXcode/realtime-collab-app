@@ -44,7 +44,7 @@ const taskSchema = z.object({
 
 /* ================= COMPONENT ================= */
 
-const AddInboxTask = ({ list }) => {
+const AddInboxTask = ({ list }: { list: any }) => {
     const dispatch = useDispatch<AppDispatch>();
     const loading = useSelector((state: RootState) => state.task.creating);
 
@@ -56,7 +56,6 @@ const AddInboxTask = ({ list }) => {
 
         // only run if list really changed
         if (prevListIdRef.current !== list.id) {
-            setListId(list.id);
             setListTitle(list.name);
             prevListIdRef.current = list.id;
         }
@@ -72,7 +71,7 @@ const AddInboxTask = ({ list }) => {
 
     const [openMoreOptions, setOpenMoreOptions] = React.useState(false);
     const [taskOpen, setTaskOpen] = React.useState(false);
-    const moreOptionRef = React.useRef(null);
+    const moreOptionRef = React.useRef<HTMLDivElement | null>(null);
     useOutsideClick(moreOptionRef, () => setOpenMoreOptions(false), openMoreOptions && !taskOpen);
 
 
@@ -104,6 +103,7 @@ const AddInboxTask = ({ list }) => {
 
         const action = await dispatch(
             createInboxTaskThunk({
+                listId: "",
                 title: result.data.title,
                 emoji: result.data.emoji ?? null,
                 dueDate: result.data.dueDate,
@@ -149,7 +149,7 @@ const AddInboxTask = ({ list }) => {
                                 <div style={{ transform: 'scale(0.8)', transformOrigin: 'top left' }}>
                                     <Picker
                                         data={data}
-                                        onEmojiSelect={(e: unknown) => {
+                                        onEmojiSelect={(e: any) => {
                                             setEmoji(e.native);
                                             setShowPicker(false);
                                         }}
@@ -206,7 +206,7 @@ const AddInboxTask = ({ list }) => {
                                 setTaskOpen={setTaskOpen}
                                 setPriority={setPriority}
                                 priority={priority}
-                                setListId={setListId}
+                                // setListId={setListId}
                                 list={list}
                                 setListTitle={setListTitle}
                                 ListTitle={ListTitle}

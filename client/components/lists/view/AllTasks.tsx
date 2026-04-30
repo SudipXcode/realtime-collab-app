@@ -80,13 +80,20 @@ const AllTasks = ({ list }) => {
 
 
     /* ✅ Loading UI */
-    function Shimmer({ className }: { className?: string }) {
-        return (
-            <div
-                className={`relative overflow-hidden rounded bg-white/5 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.6s_infinite] before:bg-linear-to-r before:from-transparent before:via-white/10 before:to-transparent ${className}`}
-            />
-        );
-    }
+function Shimmer({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div
+      style={style}
+      className={`relative overflow-hidden rounded bg-white/5 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.6s_infinite] before:bg-linear-to-r before:from-transparent before:via-white/10 before:to-transparent ${className}`}
+    />
+  );
+}
 
     if (loading) { 
         return (

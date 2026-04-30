@@ -13,19 +13,15 @@ import { useRouter } from 'next/navigation'
 import { fetchLists } from '@/redux/slices/ListsTitlesSlice';
 import { useDispatch } from 'react-redux';
 import Imagelist from '../../public/8d9523d4621cf1ae7016c9bad1cb7533.png'
-interface Member {
-    id: number;
-    name: string;
-    email: string;
-    avatar?: string;
-}
+import { AppDispatch } from '@/redux/store';
 
-const ListCreateDialog = ({ open, onOpenChange }) => {
+
+const ListCreateDialog: React.FC<any> = ({ open, onOpenChange }) => {
     const closeRef = React.useRef(null)
     useOutsideClick(closeRef, () => onOpenChange(false), open);
 
     const [isSelecting, setIsSelecting] = React.useState(false)
-    const dispatch = useDispatch()
+        const dispatch = useDispatch<AppDispatch>();
 
     const [errors, setErrors] = React.useState<{ name?: string; type?: string }>({})
 
@@ -40,17 +36,17 @@ const ListCreateDialog = ({ open, onOpenChange }) => {
 
     const debouncedQuery = useDebounce(query, 600)
 
-    const [results, setResults] = React.useState<Member[]>([])
+    const [results, setResults] = React.useState<any>([])
     const [loading, setLoading] = React.useState(false)
 
     const [name, setName] = React.useState<string>("")
     const [emoji, setEmoji] = React.useState<string>("")
     const [selectedColor, setSelectedColor] = React.useState('#4772FA')
     const [listType, setListType] = React.useState("personal");
-    const [member, setMember] = React.useState<Member | null>(null);
+    const [member, setMember] = React.useState(null);
 
-    const { callApi: postList } = useApi<{ message: string }>('/api/lists')
-    const { callApi: searchMember } = useApi<Member[]>('/api/search/members')
+    const { callApi: postList } = useApi<any>('/api/lists')
+    const { callApi: searchMember } = useApi<any>('/api/search/members')
 
     React.useEffect(() => {
         if (isSelecting) return;
@@ -69,7 +65,7 @@ const ListCreateDialog = ({ open, onOpenChange }) => {
             })
 
             if (res) {
-                setResults(res.data || [])
+                setResults(res?.data || [])
                 setShowDropdown(true)
             }
 

@@ -1,284 +1,11 @@
 
-
-// "use client";
-
-// import React, { useState, useRef } from "react";
-// import Image from "next/image";
-// import { useRouter } from "next/navigation";
-// import OAuthButton from "../ui/OAuthButton";
-
-// import GoogleLogo from "../../public/google-brands-solid-full.svg";
-// import GithubLogo from "../../public/github-brands-solid-full.svg";
-// import FacebookLogo from "../../public/facebook-f-brands-solid-full.svg";
-
-// import GoogleLogoHover from "../../public/google-brands-solid-full (1).svg";
-// import GithubLogoHover from "../../public/github-brands-solid-full (1).svg";
-// import FacebookLogoHover from "../../public/facebook-f-brands-solid-full (1).svg";
-
-// import {
-//     signInWithPopup,
-//     GoogleAuthProvider,
-//     FacebookAuthProvider,
-//     GithubAuthProvider,
-//     fetchSignInMethodsForEmail,
-//     AuthProvider,
-//     User,
-//     linkWithCredential,
-// } from "firebase/auth";
-
-// import { FirebaseError } from "firebase/app";
-// import { auth } from "@/lib/firebase";
-// import { getCsrf } from "@/lib/csrf";
-
-// /* -------------------------------------------------------------------------- */
-// /*                              Backend error type                             */
-// /* -------------------------------------------------------------------------- */
-
-// class BackendAuthError extends Error {
-//     status: number;
-//     code?: string;
-
-//     constructor(message: string, status: number, code?: string) {
-//         super(message);
-//         this.name = "BackendAuthError";
-//         this.status = status;
-//         this.code = code;
-//     }
-// }
-
-// /* -------------------------------------------------------------------------- */
-// /*                         Providers (OUTSIDE COMPONENT)                       */
-// /* -------------------------------------------------------------------------- */
-
-// const providers = {
-//     google: new GoogleAuthProvider(),
-//     github: new GithubAuthProvider(),
-//     facebook: new FacebookAuthProvider(),
-// };
-
-// const PROVIDER_FACTORIES: Record<string, () => AuthProvider> = {
-//     "google.com": () => new GoogleAuthProvider(),
-//     "github.com": () => new GithubAuthProvider(),
-//     "facebook.com": () => new FacebookAuthProvider(),
-// };
-
-// const PROVIDER_META: Record<string, { label: string; icon: unknown }> = {
-//     "google.com": { label: "Google", icon: GoogleLogo },
-//     "github.com": { label: "GitHub", icon: GithubLogo },
-//     "facebook.com": { label: "Facebook", icon: FacebookLogo },
-// };
-
-// function getPendingCredential(error: unknown) {
-//     return (
-//         GoogleAuthProvider.credentialFromError(error) ||
-//         GithubAuthProvider.credentialFromError(error) ||
-//         FacebookAuthProvider.credentialFromError(error)
-//     );
-// }
-
-// /* -------------------------------------------------------------------------- */
-// /*                                  Component                                 */
-// /* -------------------------------------------------------------------------- */
-
-// const FirebaseOAuth = () => {
-//     const router = useRouter();
-
-//     const [loading, setLoading] = useState(false);
-//     const [activeProvider, setActiveProvider] = useState<string | null>(null);
-//     const [message, setMessage] = useState<string | null>(null);
-//     const [existingProvider, setExistingProvider] = useState<{
-//         label: string;
-//         icon: unknown;
-//     } | null>(null);
-
-//     const loadingRef = useRef(false);
-
-//     const resetAuthPopup = async () => {
-//         try {
-//             await auth.signOut();
-//         } catch { }
-//     };
-
-//     const afterLogin = async (user: User) => {
-//         const token = await user.getIdToken();
-//         const { csrfToken } = await getCsrf();
-
-//         const controller = new AbortController();
-//         setTimeout(() => controller.abort(), 10000);
-
-//         const res = await fetch(
-//             `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
-//             {
-//                 method: "POST",
-//                 credentials: "include",
-//                 signal: controller.signal,
-//                 headers: {
-//                     Authorization: `Bearer ${token}`,
-//                     "x-csrf-token": csrfToken,
-//                 },
-//             }
-//         );
-
-//         if (!res.ok) {
-//             let message = "Backend authentication failed";
-//             let code: string | undefined;
-
-//             try {
-//                 const payload = await res.json();
-//                 if (payload && typeof payload === "object") {
-//                     if ("message" in payload && typeof payload.message === "string") {
-//                         message = payload.message;
-//                     }
-//                     if ("code" in payload && typeof payload.code === "string") {
-//                         code = payload.code;
-//                     }
-//                 }
-//             } catch { }
-
-//             throw new BackendAuthError(message, res.status, code);
-//         }
-
-//         router.replace("/library");
-//         router.refresh();
-//     };
-
-//     const signIn = async (provider: AuthProvider, providerId: string) => {
-//         if (loadingRef.current) return;
-
-//         loadingRef.current = true;
-//         setLoading(true);
-//         setActiveProvider(providerId);
-//         setMessage(null);
-//         setExistingProvider(null);
-
-//         try {
-//             const result = await signInWithPopup(auth, provider);
-//             await afterLogin(result.user);
-//         } catch (error: unknown) {
-//             if (
-//                 error instanceof FirebaseError &&
-//                 (error.code === "auth/popup-closed-by-user" ||
-//                     error.code === "auth/cancelled-popup-request")
-//             ) {
-//                 await resetAuthPopup();
-//                 return;
-//             }
-
-//             if (error instanceof BackendAuthError) {
-//                 if (error.status === 401 || error.status === 403) {
-//                     setMessage("Session expired or unauthorized. Please try again.");
-//                     return;
-//                 }
-
-//                 setMessage(error.message);
-//                 return;
-//             }
-
-//             if (
-//                 error instanceof FirebaseError &&
-//                 error.code === "auth/account-exists-with-different-credential"
-//             ) {
-//                 const email = error.customData?.email;
-//                 if (!email) {
-//                     setMessage("Unable to complete sign in. Please try again.");
-//                     return;
-//                 }
-
-//                 const pendingCredential = getPendingCredential(error);
-//                 if (!pendingCredential) {
-//                     setMessage("This sign-in provider is not supported.");
-//                     return;
-//                 }
-
-//                 const methods = await fetchSignInMethodsForEmail(auth, email);
-
-//                 if (methods.includes("password")) {
-//                     setMessage(
-//                         "This email is registered with Email & Password. Please log in using Email & Password."
-//                     );
-//                     return;
-//                 }
-
-//                 const providerId = methods.find((m) => PROVIDER_META[m]);
-//                 if (!providerId) {
-//                     setMessage("You already have an account with another provider.");
-//                     return;
-//                 }
-
-//                 setExistingProvider(PROVIDER_META[providerId]);
-
-//                 const primaryProvider = PROVIDER_FACTORIES[providerId]();
-//                 const primaryResult = await signInWithPopup(auth, primaryProvider);
-
-//                 await linkWithCredential(primaryResult.user, pendingCredential);
-
-//                 await afterLogin(primaryResult.user);
-//                 return;
-//             }
-
-//             console.error(error);
-//             setMessage("Something went wrong. Please try again.");
-//         } finally {
-//             loadingRef.current = false;
-//             setLoading(false);
-//             setActiveProvider(null);
-//         }
-//     };
-
-//     return (
-//         <div className="w-70 flex flex-col gap-3">
-//             {message && (
-//                 <div className="my-2 flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-[13px] text-yellow-400">
-//                     {existingProvider?.icon && (
-//                         <Image
-//                             src={existingProvider.icon}
-//                             alt={existingProvider.label}
-//                             width={16}
-//                             height={16}
-//                         />
-//                     )}
-//                     <span>{message}</span>
-//                 </div>
-//             )}
-
-//             <OAuthButton
-//                 logo={GoogleLogo}
-//                 logo2={GoogleLogoHover}   // ✅ ADD THIS
-//                 label="Google"
-//                 disabled={loading}
-//                 loading={activeProvider === "google"}
-//                 onClick={() => signIn(providers.google, "google")}
-//             />
-
-//             <OAuthButton
-//                 logo={GithubLogo}
-//                 logo2={GithubLogoHover}   // ✅ ADD THIS
-//                 label="GitHub"
-//                 disabled={loading}
-//                 loading={activeProvider === "github"}
-//                 onClick={() => signIn(providers.github, "github")}
-//             />
-
-//             <OAuthButton
-//                 logo={FacebookLogo}
-//                 logo2={FacebookLogoHover} // ✅ ADD THIS
-//                 label="Facebook"
-//                 disabled={loading}
-//                 loading={activeProvider === "facebook"}
-//                 onClick={() => signIn(providers.facebook, "facebook")}
-//             />
-//         </div>
-//     );
-// };
-
-// export default FirebaseOAuth;
 "use client";
 
 import React, { useState, useRef } from "react";
 import Image from "next/image";
+import type { StaticImageData } from "next/image";
 import { useRouter } from "next/navigation";
 import OAuthButton from "../ui/OAuthButton";
-
 import GoogleLogo from "../../public/google-brands-solid-full.svg";
 import GithubLogo from "../../public/github-brands-solid-full.svg";
 import FacebookLogo from "../../public/facebook-f-brands-solid-full.svg";
@@ -328,13 +55,13 @@ const PROVIDER_FACTORIES: Record<string, () => AuthProvider> = {
   "facebook.com": () => new FacebookAuthProvider(),
 };
 
-const PROVIDER_META: Record<string, { label: string; icon: unknown }> = {
+const PROVIDER_META: Record<string, { label: string; icon: StaticImageData }> = {
   "google.com": { label: "Google", icon: GoogleLogo },
   "github.com": { label: "GitHub", icon: GithubLogo },
   "facebook.com": { label: "Facebook", icon: FacebookLogo },
 };
 
-function getPendingCredential(error: unknown) {
+function getPendingCredential(error: FirebaseError) {
   return (
     GoogleAuthProvider.credentialFromError(error) ||
     GithubAuthProvider.credentialFromError(error) ||
@@ -352,7 +79,7 @@ const FirebaseOAuth = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [existingProvider, setExistingProvider] = useState<{
     label: string;
-    icon: unknown;
+    icon: StaticImageData
   } | null>(null);
 
   const loadingRef = useRef(false);
@@ -381,7 +108,7 @@ const FirebaseOAuth = () => {
       try {
         const payload = await res.json();
         message = payload?.message || message;
-      } catch {}
+      } catch { }
 
       throw new BackendAuthError(message, res.status);
     }
@@ -393,13 +120,12 @@ const FirebaseOAuth = () => {
   /* ---------------- Account Linking ---------------- */
 
   const handleAccountLinking = async (error: FirebaseError) => {
-    const email = error.customData?.email;
+    const email = error.customData?.email as string | undefined;
 
     if (!email) {
       setMessage("Unable to complete sign in.");
       return;
     }
-
     const pendingCredential = getPendingCredential(error);
 
     if (!pendingCredential) {

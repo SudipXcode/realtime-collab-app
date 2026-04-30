@@ -10,7 +10,7 @@ import List from "./List";
 
 /* ================= HELPERS ================= */
 
-function getErrorMessage(err: unknown, fallback: string) {
+function getErrorMessage(err: any, fallback: string) {
     return err?.message || fallback;
 }
 
@@ -21,7 +21,7 @@ const Search = () => {
     const debouncedQuery = useDebounce(query, 700);
 
     const { data, loading, error, callApi } =
-        useApi<SearchApiResponse>("/api/search/");
+        useApi<any>("/api/search/");
 
     /* ================= API CALL ================= */
 

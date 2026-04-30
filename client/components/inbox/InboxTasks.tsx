@@ -3,10 +3,10 @@ import AddTask from '../inbox/AddInboxTask'
 import PageHeading from '../ui/PageHeading'
 import AllTasks from './AllTasks'
 
-const InboxTasks = ({ initialData }) => {
+const InboxTasks = ({ initialData }: { initialData: any[] }) => {
     const flattenedTasks =
-        initialData?.flatMap((list) =>
-            list.tasks.map((task) => ({
+        initialData?.flatMap((list: any) =>
+            list.tasks.map((task: any) => ({
                 ...task,
                 listId: list.id,
                 listName: list.name,
@@ -16,7 +16,7 @@ const InboxTasks = ({ initialData }) => {
         <div className="w-full flex flex-col py-6 h-screen">
             <PageHeading title="Inbox" />
             <AddTask list={initialData} />
-            <AllTasks tasks={flattenedTasks} />
+            <AllTasks initialTasks={flattenedTasks} />
         </div>
     )
 }

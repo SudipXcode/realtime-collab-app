@@ -16,8 +16,9 @@ import {
 } from "@/redux/thunk/taskThunk";
 import { showToast } from "@/lib/toast";
 import { useRouter } from "next/navigation";
+import { AppDispatch } from "@/redux/store";
 const Task = ({ i, openTaskOptions, setOpenTaskOptions }) => {
-    const dispatch = useDispatch();
+   const dispatch = useDispatch<AppDispatch>();
     const router = useRouter();
     const {
         attributes,
@@ -44,10 +45,10 @@ const Task = ({ i, openTaskOptions, setOpenTaskOptions }) => {
         openTaskOptions && !taskOpen
     );
 
-    const selectedTask = useSelector((state) => state.task.selectedTask);
+    const selectedTask = useSelector((state: any) => state.task.selectedTask);
 
     /* ✅ ALWAYS GET LATEST TASK (avoid stale data) */
-    const latestTask = useSelector((state) =>
+    const latestTask = useSelector((state: any) =>
         state.task.tasks.find((t) => t.id === i.id)
     );
 
@@ -65,7 +66,7 @@ const Task = ({ i, openTaskOptions, setOpenTaskOptions }) => {
             showToast("Task deleted!", "success");
         } else {
             const errorMsg =
-                res.payload?.message ||
+               
                 "You don't have delete permission as guest!";
             showToast(errorMsg, "warning");
         }
@@ -97,7 +98,7 @@ const Task = ({ i, openTaskOptions, setOpenTaskOptions }) => {
     };
 
     /* ================= PRIORITY ================= */
-    const updatePriority = (priority: string) => {
+    const updatePriority = (priority: any) => {
         dispatch(
             updateTaskDebouncedThunk({
                 id: i.id,

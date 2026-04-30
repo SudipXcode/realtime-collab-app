@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { getDeviceId } from "./deviceId";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://realtime-collab-app-production.up.railway.app";
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -51,8 +51,8 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const status = error.response.status;
-    const code = error.response.data?.code;
+    const status = error.response.status as any;
+  const code = (error.response.data as any)?.code;
 
     // =============================
     // ✅ IF REFRESH IN PROGRESS → WAIT
@@ -104,7 +104,7 @@ api.interceptors.response.use(
     // ❌ OTHER ERRORS
     // =============================
     error.message =
-      error.response.data?.message || error.message || "Something went wrong";
+      (error.response.data as any)?.message || error.message || "Something went wrong";
 
     return Promise.reject(error);
   },

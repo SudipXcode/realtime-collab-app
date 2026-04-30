@@ -18,7 +18,7 @@ import { RootState } from "@/redux/store";
 import { setTasks } from "@/redux/slices/TaskDetails";
 import { BookCheck } from "lucide-react";
 
-const AllTasks = ({ tasks: initialTasks }) => {
+const AllTasks = ({ initialTasks }: { initialTasks: any[] }) => {
     const dispatch = useDispatch();
 
     // Use Redux tasks for rendering
