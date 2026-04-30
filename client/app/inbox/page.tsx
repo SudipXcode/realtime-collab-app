@@ -3,6 +3,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import ListNav from "@/components/layout/ListNav";
 import Details from "@/components/lists/Details/Details";
 import InboxTasks from "@/components/inbox/InboxTasks";
+import { getInboxList } from "@/hooks/getInbox";
 
 
 
@@ -12,16 +13,15 @@ export const metadata: Metadata = {
     "Manage and organize all your tasks in one place.",
 };
 
-export default function Page() {
+export default async function Page() {
+  const Inboxlist = await getInboxList()
+
   return (
     <div className="w-full flex h-screen relative">
       <Sidebar />
       <ListNav />
-      <InboxTasks />
-      <Details
-      // list={list}
-      // id={id}
-      />
+      <InboxTasks initialData={Inboxlist} />
+      <Details />
     </div>
   );
 }

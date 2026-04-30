@@ -15,10 +15,10 @@ import {
     updateTaskDebouncedThunk,
 } from "@/redux/thunk/taskThunk";
 import { showToast } from "@/lib/toast";
-
+import { useRouter } from "next/navigation";
 const Task = ({ i, openTaskOptions, setOpenTaskOptions }) => {
     const dispatch = useDispatch();
-
+    const router = useRouter();
     const {
         attributes,
         listeners,
@@ -114,6 +114,7 @@ const Task = ({ i, openTaskOptions, setOpenTaskOptions }) => {
 
         if (moveTaskThunk.fulfilled.match(result)) {
             dispatch(setSelectedTask())
+            router.refresh();
             showToast("Task Moved",
                 "success"
             );
