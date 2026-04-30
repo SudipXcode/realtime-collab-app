@@ -107,29 +107,7 @@ const TaskDetails = createSlice({
 
   extraReducers: (builder) => {
     builder
-      /* GET */
-      // .addCase(getTasksThunk.pending, (state) => {
-      //   state.loading = true;
-      //   state.error = null;
-      // })
-      // .addCase(getTasksThunk.fulfilled, (state, action) => {
-      //   state.loading = false;
-      //   state.tasks = action.payload;
-
-      //   // ✅ sync selectedTask after fetch
-      //   if (state.selectedTask) {
-      //     const updated = action.payload.find(
-      //       (t) => t.id === state.selectedTask?.id
-      //     );
-      //     state.selectedTask = updated || null;
-      //   }
-      // })
-      // .addCase(getTasksThunk.rejected, (state, action) => {
-      //   state.loading = false;
-      //   state.error = action.payload as string;
-      // })
-
-      /* CREATE */
+ 
       .addCase(createTaskThunk.pending, (state) => {
         state.creating = true;
       })

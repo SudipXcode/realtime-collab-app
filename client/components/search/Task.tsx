@@ -1,50 +1,49 @@
-"use client"
 
-import { Check, GripVertical } from "lucide-react"
-import React from "react"
-import { useSortable } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-import { setSelectedTask } from "@/redux/slices/TaskDetails"
-import { useDispatch, useSelector } from "react-redux"
-import { formatDate } from "@/lib/DateFormatting"
-import { updateTaskDebouncedThunk } from "@/redux/thunk/taskThunk"
 
-const Task = ({ query, i, id }) => {
-  const dispatch = useDispatch()
+import { formatDate } from '@/lib/DateFormatting';
+import { showToast } from '@/lib/toast';
+import { updateTaskDebouncedThunk } from '@/redux/thunk/taskThunk';
+import { Check } from 'lucide-react';
+import React from 'react';
+import { useDispatch } from 'react-redux';
 
-  /* ================= REDUX ================= */
+const Task = ({ task, query, listId }) => {
+  const dispatch = useDispatch();
 
-  const reduxTask = useSelector((state: any) =>
-    state.task.tasks.find((t: any) => t.id === i.id)
-  )
+  const [isChecking, setIsChecking] = React.useState(false);
+  const [checked, setChecked] = React.useState(task?.isChecked);
 
-  // ✅ Safe fallback
-  const task = reduxTask ?? i
+  React.useEffect(() => {
+    setChecked(task?.isChecked);
+  }, [task?.isChecked]);
 
-  /* ================= DND ================= */
+  const isOverdue = (date?: string) => {
+    if (!date) return false;
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({
-    id: String(task?.id || id), // ✅ always safe
-  })
+    const today = new Date();
+    const taskDate = new Date(date);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+    today.setHours(0, 0, 0, 0);
+    taskDate.setHours(0, 0, 0, 0);
+
+    return taskDate < today;
+  };
+
+  function limitWords(text: string, limit = 20) {
+    if (!text) return "";
+
+    const words = text.split(" ");
+
+    if (words.length <= limit) return text;
+
+    return words.slice(0, limit).join(" ") + "...";
   }
 
-  /* ================= HIGHLIGHT ================= */
-
   function highlight(text?: string, query?: string) {
-    if (!text) return ""
-    if (!query) return text
+    if (!text) return "";
+    if (!query) return text;
 
-    const parts = text.split(new RegExp(`(${query})`, "gi"))
+    const parts = text.split(new RegExp(`(${query})`, "gi"));
 
     return parts.map((part, index) =>
       part.toLowerCase() === query.toLowerCase() ? (
@@ -59,226 +58,73 @@ const Task = ({ query, i, id }) => {
           {part}
         </span>
       )
-    )
+    );
   }
 
-  /* ================= CHECK ================= */
-
   const handleCheck = (e: React.MouseEvent) => {
-    e.stopPropagation()
+    e.stopPropagation();
+
+    if (!task) return;
+
+    const newChecked = !checked;
+
+    setChecked(newChecked);
+    setIsChecking(true);
 
     dispatch(
       updateTaskDebouncedThunk({
         id: task.id,
-        isChecked: !task.isChecked,
+        listId,
+        isChecked: newChecked,
       })
-    )
-  }
-  function limitWords(text: string, limit = 20) {
-    if (!text) return ""
+    );
 
-    const words = text.split(" ")
+    showToast(
+      newChecked ? "Task completed" : "Task reopened",
+      "success"
+    );
 
-    if (words.length <= limit) return text
-
-    return words.slice(0, limit).join(" ") + "..."
-  }
-  /* ================= UI ================= */
+    setTimeout(() => setIsChecking(false), 700);
+  };
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      className="hover:bg-[#232323] cursor-pointer w-full transition group relative px-2 rounded-xl"
+      key={task?.id}
+      className="w-full hover:bg-[#232323] rounded-xl cursor-pointer transition ease-linear duration-150 h-auto flex items-center gap-3 p-2 border-b border-[#2D2D2D]"
     >
-      {/* Drag */}
-      <button
-        {...attributes}
-        {...listeners}
-        onClick={(e) => e.stopPropagation()}
-        className="absolute text-[#a7a7a7] opacity-0 group-hover:opacity-100 h-full -left-4 cursor-grab"
+      <div
+        onClick={handleCheck}
+        title="Check box"
+        className={`${checked
+          ? "border-[#4772FA] bg-[#4772FA]"
+          : "border-[#727272]"
+          } flex-none cursor-pointer w-4.5 h-4.5 rounded-md border-2 relative`}
       >
-        <GripVertical size={15} />
-      </button>
+        {isChecking ? (
+          <span className="absolute inset-0 rounded-sm border-2 border-white/20 border-t-white animate-spin" />
+        ) : (
+          checked && <Check size={14} />
+        )}
+      </div>
 
-      <div className="flex items-center gap-2 w-full border-b py-2 border-[#2D2D2D]">
-
-        {/* Checkbox */}
-        <div
-          onClick={handleCheck}
-          className={`${task.isChecked
-              ? "border-[#4772FA] bg-[#4772FA]"
-              : "border-[#727272]"
-            } w-4.5 h-4.5 rounded-md border-2 cursor-pointer flex items-center justify-center shrink-0`}
+      <div className="w-full flex items-center justify-between h-auto">
+        <h5
+          className={`text-[14px] font-medium
+            ${checked ? "line-through text-[#7C7C7C]" : ""}
+            ${!checked && isOverdue(task?.dueDate)
+              ? "line-through decoration-red-500 text-red-400"
+              : ""
+            }`}
         >
-          {task.isChecked && <Check size={14} />}
-        </div>
+          {highlight(limitWords(task?.title, 25), query)}
+        </h5>
 
-        {/* Content */}
-        <div
-          onClick={() => dispatch(setSelectedTask(task))}
-          className="flex items-center gap-2 w-full min-w-0"
-        >
-          {/* LEFT */}
-          <div className="flex flex-col gap-1 flex-1 min-w-0">
-
-            {/* TITLE */}
-            <h5
-              className={`${task.isChecked
-                  ? "line-through text-[#999999]"
-                  : ""
-                } text-[14px] font-medium truncate`}
-            >
-              {highlight(task.title, query)}
-            </h5>
-
-            {/* DESC */}
-            {task.desc && (
-              <p className="text-[#7C7C7C] text-[12px] ">
-                {highlight(limitWords(task.desc, 25), query)}
-              </p>
-            )}
-          </div>
-
-          {/* RIGHT */}
-          <div className="flex  items-center gap-2 shrink-0 whitespace-nowrap">
-            <p className="text-[#7C7C7C] text-[12px]">
-              {formatDate(task?.dueDate)}
-            </p>
-
-            <span className="text-[#999999] text-[12px] font-semibold">
-              {i?.listName}
-            </span>
-          </div>
-        </div>
+        <button className="text-[#7C7C7C] text-[12px] flex items-center gap-2 font-medium">
+          {formatDate(task?.dueDate)}
+        </button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Task
-// "use client"
-// import { Check, GripVertical } from "lucide-react"
-// import React from "react"
-// import { useSortable } from "@dnd-kit/sortable"
-// import { CSS } from "@dnd-kit/utilities"
-// import { setSelectedTask } from "@/redux/slices/TaskDetails"
-// import { useDispatch, useSelector } from "react-redux"
-// import { formatDate } from "@/lib/DateFormatting"
-// import { updateTaskDebouncedThunk } from "@/redux/thunk/taskThunk"
-
-//  const Task = ({ query, i, id }) => {
-//   const dispatch = useDispatch()
-
-//   const task = useSelector((state: any) =>
-//     state.task.tasks.find((t: any) => t.id === i.id)
-//   )
-//   if (!task) return null // ✅ NO FALLBACK
-//   const {
-//     attributes,
-//     listeners,
-//     setNodeRef,
-//     transform,
-//     transition,
-//   } = useSortable({ id: String(task.id) })
-
-//   const style = {
-//     transform: CSS.Transform.toString(transform),
-//     transition,
-//   }
-
-//   function highlight(title?: string, query?: string) {
-//     if (!title) return ""
-//     if (!query) return title
-
-//     const parts = title.split(new RegExp(`(${query})`, "gi"))
-
-//     return parts.map((part, index) =>
-//       part.toLowerCase() === query.toLowerCase() ? (
-//         <span key={index} className="bg-[#c68b168f] text-gray-200 px-0.5">
-//           {part}
-//         </span>
-//       ) : (
-//         part
-//       )
-//     )
-//   }
-
-//   const handleCheck = (e: React.MouseEvent) => {
-//     e.stopPropagation()
-
-//     dispatch(
-//       updateTaskDebouncedThunk({
-//         id: task.id, // ✅ use redux task
-//         isChecked: !task.isChecked,
-//       })
-//     )
-//   }
-
-
-
-//   return (
-//     <div
-//       ref={setNodeRef}
-//       style={style}
-//       className="hover:bg-[#232323] cursor-pointer w-full transition group relative px-2 rounded-xl"
-//     >
-//       <button
-//         {...attributes}
-//         {...listeners}
-//         onClick={(e) => e.stopPropagation()}
-//         className="absolute text-[#a7a7a7] opacity-0 group-hover:opacity-100 h-full -left-4 cursor-grab"
-//       >
-//         <GripVertical size={15} />
-//       </button>
-
-//       <div className="flex items-center gap-2 w-full border-b py-2 border-[#2D2D2D]">
-
-//         {/* Checkbox */}
-//         <div
-//           onClick={handleCheck}
-//           className={`${task.isChecked
-//               ? "border-[#4772FA] bg-[#4772FA]"
-//               : "border-[#727272]"
-//             } w-4.5 h-4.5 rounded-md border-2 cursor-pointer`}
-//         >
-//           {task.isChecked && <Check size={14} />}
-//         </div>
-
-//         {/* Content */}
-//         <div
-//           onClick={() => dispatch(setSelectedTask(task))}
-//           className="w-full flex justify-between pl-1"
-//         >
-//           <div className="flex flex-col gap-1">
-//             <h5
-//               className={`${task.isChecked
-//                   ? "line-through text-[#999999]"
-//                   : ""
-//                 } text-[14px] font-medium`}
-//             >
-//               {highlight(task.title, query)}
-//             </h5>
-
-//             {task.desc && (
-//               <p className="text-[#7C7C7C] text-[12px]">
-//                 {highlight(task.desc, query)}
-//               </p>
-//             )}
-//           </div>
-
-//           <div className="flex gap-2 items-center">
-//             <p className="text-[#7C7C7C] text-[12px]">
-//               {formatDate(task?.dueDate)}
-//             </p>
-
-//             <span className="text-[#999999] text-[12px] font-semibold">
-//               {i?.listName} {/* listName still from API */}
-//             </span>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   )
-// }
-// export default Task;
+export default Task;

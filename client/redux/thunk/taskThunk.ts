@@ -180,7 +180,6 @@ export const deleteTaskThunk = createAsyncThunk(
   },
 );
 
-/* ================= DEBOUNCE UPDATE ================= */
 
 const timers: Record<string, NodeJS.Timeout> = {};
 const pending: Record<string, Partial<Task>> = {};
@@ -191,17 +190,23 @@ export const updateTaskDebouncedThunk =
     const { id, ...rest } = data;
 
     const state = getState();
-    const existingTask = state.task.tasks.find((t: Task) => t.id === id);
 
-    if (!existingTask) return;
+    const existingTask = state.task.tasks.find(
+      (t: Task) => t.id === id
+    );
 
-    /* ✅ merge pending updates */
+    // fallback for search page
+    const resolvedListId = existingTask?.listId || data.listId;
+
+    if (!resolvedListId) return;
+
+    /* ================= MERGE PENDING ================= */
     pending[id] = {
       ...pending[id],
       ...rest,
     };
 
-    /* ✅ optimistic UI update */
+    /* ================= OPTIMISTIC UPDATE ================= */
     dispatch(updateTaskLocal(data));
 
     if (timers[id]) clearTimeout(timers[id]);
@@ -210,35 +215,45 @@ export const updateTaskDebouncedThunk =
       try {
         const raw = pending[id];
 
-        if (!raw) return; // ✅ FIX CRASH
+        if (!raw) return;
 
-        const payload: unknown = {
-          listId: existingTask.listId, // required
+        const payload: Partial<Task> & { listId: string } = {
+          listId: resolvedListId,
         };
 
-        if (raw.title !== undefined) payload.title = raw.title;
-
-        if (raw.description !== undefined)
-          payload.description = raw.description === "" ? null : raw.description;
-
-        if (raw.dueDate !== undefined) payload.dueDate = raw.dueDate;
-
-        if (raw.priority !== undefined) payload.priority = raw.priority;
-
-        if (raw.isChecked !== undefined) payload.isChecked = raw.isChecked;
-
-        /* ❗ EXTRA SAFETY */
-        if (Object.keys(payload).length === 1) {
-          // only listId → nothing changed
-          return;
+        if (raw.title !== undefined) {
+          payload.title = raw.title;
         }
 
-        const res = await apiCall<{ data: ApiTask }>(`/api/task/${id}`, {
-          method: "PATCH",
-          body: JSON.stringify(payload),
-        });
+        if (raw.dueDate !== undefined) {
+          payload.dueDate = raw.dueDate;
+        }
 
-        dispatch(updateTaskLocal(mapTask(res.data, existingTask.listId)));
+        if (raw.priority !== undefined) {
+          payload.priority = raw.priority;
+        }
+
+        if (raw.isChecked !== undefined) {
+          payload.isChecked = raw.isChecked;
+        }
+
+        // no actual updates
+        if (Object.keys(payload).length === 1) return;
+
+        const res = await apiCall<{ data: ApiTask }>(
+          `/api/task/${id}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(payload),
+          }
+        );
+
+        /* ================= HARD SYNC ================= */
+        dispatch(
+          updateTaskLocal(
+            mapTask(res.data, resolvedListId)
+          )
+        );
 
         delete pending[id];
         delete timers[id];
