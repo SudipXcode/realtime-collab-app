@@ -29,23 +29,38 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(compression());
 
 // 5️⃣ CORS
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       if (!origin && process.env.NODE_ENV !== "production") {
+//         return callback(null, true);
+//       }
+
+//       if (origin && allowedOrigins.includes(origin)) {
+//         return callback(null, true);
+//       }
+
+//       return callback(null, false);
+//     },
+//     credentials: true,
+//   }),
+// );
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin && process.env.NODE_ENV !== "production") {
+      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [];
+
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      if (origin && allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(null, false);
+      return callback(new Error("Not allowed by CORS"), false);
     },
     credentials: true,
-  }),
+  })
 );
-
 // 6️⃣ Timeout (MOVE HERE ✅)
 app.use((req, res, next) => {
   res.setTimeout(10000, () => {
