@@ -47,16 +47,22 @@ app.use(compression());
 app.use(
   cors({
     origin: (origin, callback) => {
-      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [];
-
-      // allow mobile apps / postman
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
+      const allowedOrigins =
+        process.env.ALLOWED_ORIGINS?.split(",") || [];
+
+      const isVercelPreview =
+        origin.endsWith(".vercel.app");
+
+      if (
+        allowedOrigins.includes(origin) ||
+        isVercelPreview
+      ) {
         return callback(null, true);
       }
 
-      return callback(null, false); // ❌ DO NOT THROW ERROR
+      return callback(null, true);
     },
     credentials: true,
   })
