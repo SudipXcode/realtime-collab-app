@@ -9,7 +9,6 @@ const getCookieOptions = (): CookieOptions => {
     secure: true,
     sameSite: "none",
     path: "/",
-    domain: ".vercel.app",
   };
 };
 
