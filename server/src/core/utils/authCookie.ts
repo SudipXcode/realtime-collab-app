@@ -3,7 +3,7 @@ import { Response, CookieOptions } from "express";
 import { ENV } from "../../config/env";
 
 const getCookieOptions = (): CookieOptions => {
-  const isProd = ENV.NODE_ENV === "production";
+  // const isProd = ENV.NODE_ENV === "production";
 
   return {
     httpOnly: true,
@@ -22,12 +22,12 @@ export const setAuthCookies = (
 
   res.cookie("accessToken", accessToken, {
     ...baseOptions,
-    maxAge: ENV.ACCESS_TOKEN_COOKIE_MAX_AGE,
+    maxAge: 15 * 60,
   });
 
   res.cookie("refreshToken", refreshToken, {
     ...baseOptions,
-    maxAge: ENV.REFRESH_TOKEN_COOKIE_MAX_AGE,
+    maxAge: 30 * 24 * 60 * 60,
   });
 };
 
