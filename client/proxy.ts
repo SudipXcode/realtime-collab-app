@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const BACKEND_URL = process.env.BACKEND_URL || "https://realtime-collab-app-production.up.railway.app";
+const BACKEND_URL =
+  process.env.BACKEND_URL ||
+  "https://realtime-collab-app-production.up.railway.app";
 
 const REFRESH_SECRET = new TextEncoder().encode(
-  process.env.REFRESH_TOKEN_SECRET || "refresh-secret"
+  process.env.REFRESH_TOKEN_SECRET || "refresh-secret",
 );
 const ACCESS_SECRET = new TextEncoder().encode(
-  process.env.ACCESS_TOKEN_SECRET || "access-secret"
+  process.env.ACCESS_TOKEN_SECRET || "access-secret",
 );
 
 // ✅ Verify JWT without calling backend
-async function verifyToken(token: string, secret: Uint8Array): Promise<boolean> {
+async function verifyToken(
+  token: string,
+  secret: Uint8Array,
+): Promise<boolean> {
   try {
     await jwtVerify(token, secret);
     return true;
@@ -71,7 +76,7 @@ async function callRefreshEndpoint(refreshTokenValue: string): Promise<{
 
     // ✅ Get Set-Cookie header(s) from response
     const setCookieHeaders = res.headers.getSetCookie(); // ✅ Use getSetCookie() for Next.js
-    
+
     if (!setCookieHeaders || setCookieHeaders.length === 0) {
       console.error("❌ No Set-Cookie header in response");
       return { success: false };
@@ -83,7 +88,7 @@ async function callRefreshEndpoint(refreshTokenValue: string): Promise<{
     // Parse all Set-Cookie headers
     for (const setCookieHeader of setCookieHeaders) {
       const parsed = parseSetCookieHeader(setCookieHeader);
-      
+
       for (const cookie of parsed) {
         if (cookie.name === "accessToken") {
           accessToken = cookie.value;
@@ -154,7 +159,7 @@ export async function proxy(req: NextRequest) {
   // 4️⃣ Refresh valid but access expired → refresh silently
   if (isRefreshValid && !isAccessValid) {
     console.log("🔄 Access token expired, refreshing...");
-    
+
     const result = await callRefreshEndpoint(refreshToken);
 
     if (!result.success || !result.accessToken || !result.refreshToken) {
@@ -171,7 +176,7 @@ export async function proxy(req: NextRequest) {
       secure: true,
       sameSite: "none",
       path: "/",
-      maxAge: 15 * 60, // 15 minutes
+      maxAge: 15 * 60 * 60, // 15 minutes
     });
 
     response.cookies.set("refreshToken", result.refreshToken, {
@@ -179,7 +184,7 @@ export async function proxy(req: NextRequest) {
       secure: true,
       sameSite: "none",
       path: "/",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
     return response;
