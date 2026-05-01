@@ -22,12 +22,12 @@ export const setAuthCookies = (
 
   res.cookie("accessToken", accessToken, {
     ...baseOptions,
-    maxAge: 15 * 60,
+    maxAge: 15 * 60 * 1000,
   });
 
   res.cookie("refreshToken", refreshToken, {
     ...baseOptions,
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 30 * 24 * 60 * 60 * 1000,,
   });
 };
 
