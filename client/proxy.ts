@@ -176,7 +176,7 @@ export async function proxy(req: NextRequest) {
       secure: true,
       sameSite: "none",
       path: "/",
-      maxAge: 15 * 60 * 60, // 15 minutes
+      maxAge: 15 * 60 , // 15 minutes
     });
 
     response.cookies.set("refreshToken", result.refreshToken, {
@@ -184,7 +184,7 @@ export async function proxy(req: NextRequest) {
       secure: true,
       sameSite: "none",
       path: "/",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      maxAge: 30 * 24 * 60 * 60 , // 30 days
     });
 
     return response;
