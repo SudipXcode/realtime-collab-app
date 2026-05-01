@@ -1,4 +1,3 @@
-
 import { Response, CookieOptions } from "express";
 import { ENV } from "../../config/env";
 
@@ -10,24 +9,25 @@ const getCookieOptions = (): CookieOptions => {
     secure: true,
     sameSite: "none",
     path: "/",
+    domain: ".vercel.app",
   };
 };
 
 export const setAuthCookies = (
   res: Response,
   accessToken: string,
-  refreshToken: string
+  refreshToken: string,
 ) => {
   const baseOptions = getCookieOptions();
 
   res.cookie("accessToken", accessToken, {
     ...baseOptions,
-   maxAge: 15 * 60 * 1000,
+    maxAge: 15 * 60 * 1000,
   });
 
   res.cookie("refreshToken", refreshToken, {
     ...baseOptions,
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+    maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 };
 
