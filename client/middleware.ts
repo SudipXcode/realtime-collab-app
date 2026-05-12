@@ -208,6 +208,17 @@ const ACCESS_SECRET = new TextEncoder().encode(
   process.env.ACCESS_TOKEN_SECRET || "access-secret"
 );
 
+const BACKEND_URL =
+  process.env.BACKEND_URL ||
+  "http://realtime-collab-app.railway.internal:8080";
+
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+};
+
 async function verifyToken(token: string, secret: Uint8Array): Promise<boolean> {
   try {
     await jwtVerify(token, secret);
@@ -217,16 +228,12 @@ async function verifyToken(token: string, secret: Uint8Array): Promise<boolean> 
   }
 }
 
-// Call /api/auth/refresh through the Next.js rewrite (same-origin now)
+// ✅ Call backend DIRECTLY (not via Next.js URL) to avoid recursive loop
 async function callRefreshEndpoint(
-  refreshTokenValue: string,
-  req: NextRequest
+  refreshTokenValue: string
 ): Promise<{ success: boolean; accessToken?: string; refreshToken?: string }> {
   try {
-    // Build the internal URL using the request's host so it hits the rewrite
-    const url = new URL("/api/auth/refresh", req.url);
-
-    const res = await fetch(url.toString(), {
+    const res = await fetch(`${BACKEND_URL}/api/auth/refresh`, {
       method: "POST",
       headers: {
         Cookie: `refreshToken=${refreshTokenValue}`,
@@ -250,13 +257,11 @@ async function callRefreshEndpoint(
     let refreshToken: string | undefined;
 
     for (const header of setCookieHeaders) {
-      // Each header looks like: "accessToken=xxx; Path=/; HttpOnly; ..."
       const [nameValue] = header.split(";");
       const eqIdx = nameValue.indexOf("=");
       if (eqIdx === -1) continue;
       const name = nameValue.slice(0, eqIdx).trim();
       const value = nameValue.slice(eqIdx + 1).trim();
-
       if (name === "accessToken") accessToken = value;
       if (name === "refreshToken") refreshToken = value;
     }
@@ -280,18 +285,12 @@ function redirectAndClearCookies(url: URL): NextResponse {
   return response;
 }
 
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const, // ✅ lax works for same-origin (via rewrite proxy)
-  path: "/",
-};
-
-export async function proxy(req: NextRequest) {
+// ✅ MUST be named "middleware" — not "proxy" or anything else
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const url = req.nextUrl.clone();
 
-  // Skip middleware for API routes — let rewrites handle them
+  // Skip API routes — handled by app/api/auth/*/route.ts
   if (pathname.startsWith("/api/")) {
     return NextResponse.next();
   }
@@ -322,11 +321,11 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // 3️⃣ Refresh valid but access token expired → refresh silently
+  // 3️⃣ Refresh valid but access token expired → refresh silently via backend directly
   if (isRefreshValid && !isAccessValid) {
     console.log("🔄 Access token expired, refreshing...");
 
-    const result = await callRefreshEndpoint(refreshToken!, req);
+    const result = await callRefreshEndpoint(refreshToken!);
 
     if (!result.success || !result.accessToken || !result.refreshToken) {
       console.error("❌ Refresh failed, logging out");
@@ -338,12 +337,12 @@ export async function proxy(req: NextRequest) {
 
     response.cookies.set("accessToken", result.accessToken, {
       ...COOKIE_OPTIONS,
-      maxAge: 15 * 60, // 15 minutes
+      maxAge: 15 * 60,
     });
 
     response.cookies.set("refreshToken", result.refreshToken, {
       ...COOKIE_OPTIONS,
-      maxAge: 30 * 24 * 60 * 60, // 30 days
+      maxAge: 30 * 24 * 60 * 60,
     });
 
     return response;
