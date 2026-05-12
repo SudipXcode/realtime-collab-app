@@ -1,6 +1,18 @@
 import type { NextConfig } from "next";
 
+const BACKEND_URL =
+  process.env.BACKEND_URL ||
+  "https://realtime-collab-app-production.up.railway.app"; // ✅ hardcoded fallback so build never fails
+
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${BACKEND_URL}/api/:path*`,
+      },
+    ];
+  },
   turbopack: {},
   images: {
     remotePatterns: [
@@ -19,11 +31,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "avatars.githubusercontent.com", // ✅ FIXED
+        hostname: "avatars.githubusercontent.com",
       },
     ],
   },
-  // reactStrictMode: false,
 };
 
 export default nextConfig;
